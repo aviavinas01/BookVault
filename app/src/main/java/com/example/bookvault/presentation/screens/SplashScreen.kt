@@ -5,7 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -17,13 +19,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun SplashScreen(onNavigateToList: () -> Unit) {
+fun SplashScreen(onNavigateToHome: () -> Unit) {
 
     val scale = remember { Animatable(0.8f) }
     val alpha = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        // Animate in
         launch {
             scale.animateTo(
                 targetValue = 1f,
@@ -38,12 +39,11 @@ fun SplashScreen(onNavigateToList: () -> Unit) {
             animationSpec = tween(600)
         )
         delay(1800)
-        // Fade out
         alpha.animateTo(
             targetValue = 0f,
             animationSpec = tween(400)
         )
-        onNavigateToList()
+        onNavigateToHome()
     }
 
     Box(

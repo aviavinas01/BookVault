@@ -4,8 +4,8 @@ import com.example.bookvault.data.local.BookDao
 import com.example.bookvault.data.local.toDomain
 import com.example.bookvault.data.local.toEntity
 import com.example.bookvault.data.remote.BookApiService
-import com.example.bookvault.data.remote.BookDto
 import com.example.bookvault.data.remote.toDomain
+import com.example.bookvault.data.remote.toDto
 import com.example.bookvault.domain.model.Book
 import com.example.bookvault.domain.repository.BookRepository
 
@@ -16,13 +16,12 @@ class BookRepositoryImpl(
 
     override suspend fun getBooks(): Result<List<Book>> {
         return try {
-            val remote = api.getAllBooks().map { it.toDomain() }
-            dao.insertBooks(remote.map { it.toEntity() })
-            Result.success(remote)
+            val books = api.getAllBooks().map { it.toDomain() }
+            dao.insertBooks(books.map { it.toEntity() })
+            Result.success(books)
         } catch (e: Exception) {
-            android.util.Log.e("BookRepo", "API failed: ${e.message}", e)
-            val local = dao.getAllBooks().map { it.toDomain() }
-            if (local.isNotEmpty()) Result.success(local)
+            val cached = dao.getAllBooks().map { it.toDomain() }
+            if (cached.isNotEmpty()) Result.success(cached)
             else Result.failure(e)
         }
     }
@@ -31,23 +30,15 @@ class BookRepositoryImpl(
         return try {
             Result.success(api.getBookById(id).toDomain())
         } catch (e: Exception) {
-            val local = dao.getBookById(id)?.toDomain()
-            if (local != null) Result.success(local)
+            val cached = dao.getBookById(id)?.toDomain()
+            if (cached != null) Result.success(cached)
             else Result.failure(e)
         }
     }
 
     override suspend fun addBook(book: Book): Result<Book> {
         return try {
-            val dto = BookDto(
-                id = book.id,
-                title = book.title,
-                description = book.description,
-                pageCount = book.pageCount,
-                excerpt = book.excerpt,
-                publishDate = book.publishDate
-            )
-            val result = api.addBook(dto).toDomain()
+            val result = api.addBook(book.toDto()).toDomain()
             dao.insertBook(result.toEntity())
             Result.success(result)
         } catch (e: Exception) {

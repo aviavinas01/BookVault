@@ -14,13 +14,12 @@ object HttpClientFactory {
                 json(Json {
                     ignoreUnknownKeys = true
                     isLenient = true
-                    prettyPrint = true
-                    coerceInputValues = true    // handles null/missing fields
+                    coerceInputValues = true
                 })
             }
             install(Logging) {
                 logger = Logger.ANDROID
-                level = LogLevel.ALL
+                level = LogLevel.INFO
             }
         }
     }

@@ -9,6 +9,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.BookmarkBorder
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,7 +24,6 @@ import com.example.bookvault.presentation.viewmodel.BookViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookDetailScreen(
-    bookId: Int,
     viewModel: BookViewModel,
     onBack: () -> Unit,
     onDelete: () -> Unit
@@ -85,9 +87,26 @@ fun BookDetailScreen(
                 },
                 title = { },
                 actions = {
+                    // Save / unsave toggle
+                    val isSaved = uiState.savedBookIds.contains(book?.id ?: -1)
+                    IconButton(
+                        onClick = {
+                            book?.let { viewModel.saveBookToList(it) }
+                        },
+                        enabled = !isSaved
+                    ) {
+                        Icon(
+                            imageVector = if (isSaved) Icons.Rounded.Bookmark
+                            else Icons.Rounded.BookmarkBorder,
+                            contentDescription = if (isSaved) "Saved" else "Save to list",
+                            tint = if (isSaved) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(
-                            Icons.Rounded.DeleteOutline,
+                            Icons.Rounded.Delete,
                             contentDescription = "Delete",
                             tint = MaterialTheme.colorScheme.error
                         )
@@ -119,7 +138,6 @@ fun BookDetailScreen(
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // Book hero block
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -140,7 +158,6 @@ fun BookDetailScreen(
                         }
                     }
 
-                    // Stats row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -157,7 +174,6 @@ fun BookDetailScreen(
                         )
                     }
 
-                    // Description section
                     if (book.description.isNotBlank()) {
                         DetailSection(title = "Description") {
                             Text(
@@ -169,7 +185,6 @@ fun BookDetailScreen(
                         }
                     }
 
-                    // Excerpt section
                     if (book.excerpt.isNotBlank()) {
                         DetailSection(title = "Excerpt") {
                             Text(
@@ -181,7 +196,6 @@ fun BookDetailScreen(
                         }
                     }
 
-                    // Publish date
                     if (book.publishDate.isNotBlank()) {
                         DetailSection(title = "Published") {
                             Text(

@@ -1,5 +1,6 @@
 package com.example.bookvault.data.remote
 
+import com.example.bookvault.domain.model.Book
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -12,12 +13,20 @@ data class BookDto(
     val publishDate: String? = null
 )
 
-// Maps API response → Domain model
-fun BookDto.toDomain() = com.example.bookvault.domain.model.Book(
+fun BookDto.toDomain() = Book(
     id = id,
     title = title,
     description = description,
     pageCount = pageCount,
     excerpt = excerpt,
-    publishDate = publishDate ?: ""
+    publishDate = publishDate.orEmpty()
+)
+
+fun Book.toDto() = BookDto(
+    id = id,
+    title = title,
+    description = description,
+    pageCount = pageCount,
+    excerpt = excerpt,
+    publishDate = publishDate
 )

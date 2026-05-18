@@ -8,7 +8,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.bookvault.presentation.screens.AddBookScreen
 import com.example.bookvault.presentation.screens.BookDetailScreen
-import com.example.bookvault.presentation.screens.BookListScreen
+import com.example.bookvault.presentation.screens.BrowseScreen
+import com.example.bookvault.presentation.screens.HomeScreen
 import com.example.bookvault.presentation.screens.SplashScreen
 import com.example.bookvault.presentation.viewmodel.BookViewModel
 
@@ -25,40 +26,53 @@ fun NavGraph(
     ) {
         composable(Screen.Splash.route) {
             SplashScreen(
-                onNavigateToList = {
-                    navController.navigate(Screen.BookList.route) {
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
             )
         }
 
-        composable(Screen.BookList.route) {
-            BookListScreen(
+        composable(Screen.Home.route) {
+            HomeScreen(
                 viewModel = viewModel,
                 isDarkTheme = isDarkTheme,
                 onThemeToggle = onThemeToggle,
+                onBrowseClick = {
+                    navController.navigate(Screen.Browse.route)
+                },
+                onAddManuallyClick = {
+                    navController.navigate(Screen.AddBook.route)
+                },
                 onBookClick = { bookId ->
                     viewModel.fetchBookById(bookId)
                     navController.navigate(Screen.BookDetail.createRoute(bookId))
-                },
-                onAddClick = {
-                    navController.navigate(Screen.AddBook.route)
+                }
+            )
+        }
+
+        composable(Screen.Browse.route) {
+            BrowseScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onBookClick = { bookId ->
+                    viewModel.fetchBookById(bookId)
+                    navController.navigate(Screen.BookDetail.createRoute(bookId))
                 }
             )
         }
 
         composable(
             route = Screen.BookDetail.route,
-            arguments = listOf(navArgument("bookId") { type = NavType.IntType })
-        ) { backStack ->
-            val bookId = backStack.arguments?.getInt("bookId") ?: return@composable
+            arguments = listOf(
+                navArgument("bookId") { type = NavType.IntType }
+            )
+        ) {
             BookDetailScreen(
-                bookId = bookId,
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onDelete = {
-                    viewModel.deleteBook(bookId)
                     navController.popBackStack()
                 }
             )
@@ -68,9 +82,7 @@ fun NavGraph(
             AddBookScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
-                onSuccess = {
-                    navController.popBackStack()
-                }
+                onSuccess = { navController.popBackStack() }
             )
         }
     }
