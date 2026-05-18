@@ -1,4 +1,4 @@
-package com.example.kmp_bookstore
+package com.example.bookvault
 
 import org.junit.Test
 

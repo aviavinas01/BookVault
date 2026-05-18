@@ -1,4 +1,4 @@
-package com.example.kmp_bookstore.ui.theme
+package com.example.bookvault.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
