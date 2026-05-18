@@ -9,7 +9,7 @@ data class BookDto(
     val description: String,
     val pageCount: Int,
     val excerpt: String,
-    val publishDate: String
+    val publishDate: String? = null
 )
 
 // Maps API response → Domain model
@@ -19,5 +19,5 @@ fun BookDto.toDomain() = com.example.bookvault.domain.model.Book(
     description = description,
     pageCount = pageCount,
     excerpt = excerpt,
-    publishDate = publishDate
+    publishDate = publishDate ?: ""
 )

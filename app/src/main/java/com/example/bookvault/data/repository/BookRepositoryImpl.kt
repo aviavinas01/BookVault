@@ -16,14 +16,11 @@ class BookRepositoryImpl(
 
     override suspend fun getBooks(): Result<List<Book>> {
         return try {
-            // 1. Fetch from API
             val remote = api.getAllBooks().map { it.toDomain() }
-            // 2. Cache into Room
             dao.insertBooks(remote.map { it.toEntity() })
-            // 3. Return fresh data
             Result.success(remote)
         } catch (e: Exception) {
-            // API failed — fall back to local cache
+            android.util.Log.e("BookRepo", "API failed: ${e.message}", e)
             val local = dao.getAllBooks().map { it.toDomain() }
             if (local.isNotEmpty()) Result.success(local)
             else Result.failure(e)
