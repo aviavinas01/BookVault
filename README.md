@@ -1,206 +1,121 @@
-<div align="center">
+# BookVault
 
-# 📚 BookVault
-
-**A modern Android reading-list app built with Jetpack Compose**
-
-[![Android](https://img.shields.io/badge/Platform-Android-green.svg?logo=android)](https://developer.android.com)
-[![Kotlin](https://img.shields.io/badge/Language-Kotlin-blueviolet.svg?logo=kotlin)](https://kotlinlang.org)
-[![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-blue.svg?logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
-[![Min SDK](https://img.shields.io/badge/Min%20SDK-26-orange.svg)](https://developer.android.com/about/versions/oreo)
-[![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
-
-</div>
+A modern Android reading-list manager built with Jetpack Compose and clean MVVM architecture. Connects to a live book catalogue API, stores your personal picks locally with Room, and works fully offline after the first fetch.
 
 ---
 
-## 📸 Screenshots
-
-> **How to add screenshots:** Take screenshots from your device/emulator in Android Studio  
-> (**Device Mirror → Camera icon** or `adb shell screencap`), save them to a `/screenshots` folder  
-> in the project root, then replace the placeholders below.
+## Screenshots
 
 <div align="center">
 
-| Home Screen | Book Detail | Browse Library |
-|:-----------:|:-----------:|:--------------:|
+| Home | Book Detail | Browse |
+|:----:|:-----------:|:------:|
 | ![Home](screenshots/home.png) | ![Detail](screenshots/detail.png) | ![Browse](screenshots/browse.png) |
-| *Featured carousel & reading list* | *Read Now, Download & Reviews* | *Search & filter books* |
 
 | Profile | Dark Mode | Splash |
 |:-------:|:---------:|:------:|
 | ![Profile](screenshots/profile.png) | ![Dark](screenshots/dark_mode.png) | ![Splash](screenshots/splash.png) |
-| *Stats & saved books* | *Dark theme support* | *Animated launch screen* |
 
 </div>
 
 ---
 
-## 🌟 Overview
+## Overview
 
-**BookVault** is a clean, modern Android application that lets you discover, browse, and manage a personal reading list. It connects to a public REST API to fetch a live catalogue of books, and stores your personal picks locally using Room — so your reading list is always available, even offline.
-
-The app is built entirely with **Jetpack Compose**, following a clean **MVVM + Use-Case** architecture, and uses **Koin** for dependency injection.
+BookVault lets you discover books from a public REST API, browse and search the full catalogue, and maintain a personal reading list stored locally. The UI is built entirely in Jetpack Compose with Material3, following a clean Use-Case-driven MVVM pattern and Koin for dependency injection.
 
 ---
 
-## ✨ Features
+## Features
 
-### 🏠 Home Screen
-- **Featured Books Carousel** — a horizontal auto-scrolling pager showing 5 randomly selected books from the library, each with a unique gradient card, animated page-dot indicators, and a 3.5-second auto-advance timer
-- **Discover & Popular rows** — horizontally scrollable rows showing new arrivals and curated picks from the API
-- **Genre grid** — browse books by category (Fiction, Mystery, Fantasy, Sci-Fi, History, Poetry, Drama, Classic, Science)
-- **Reading List** — your personally saved books displayed as swipeable cards; swipe left to reveal the iOS-style red "Remove" indicator and dismiss to delete
-- **Dark / Light mode toggle** — instant theme switching from the top bar
+**Home**
+- Horizontal discover and popular rows pulled from the live API
+- Personal reading list with swipe-left-to-remove gesture
+- Bottom sheet entry point: browse the API catalogue or add a book manually
+- Dark and light mode toggle
 
-### 🔍 Browse Screen
-- Full live search by title or description across the entire API catalogue
-- Animated clear button, smooth empty-state messages
-- Bookmark toggle on each book card to add/remove from your reading list directly
+**Browse**
+- Full-text search across title and description
+- Animated search clear button and empty state handling
+- Bookmark toggle to save books directly to your reading list
 
-### 📖 Book Detail Screen
-- Large book cover with gradient art generated from the title
-- **Author section** — avatar row ready for author data
-- **Stats chips** — page count, rating placeholder, book ID
-- **Read Now** (filled primary button) and **Download** (outlined button) action buttons
-- Description, Excerpt, Published date sections
-- **Reviews section** — three placeholder review cards with star ratings and reviewer avatars, ready to be wired to a real review API
+**Book Detail**
+- Generated gradient cover art derived from the book title
+- Page count, publish date, description, and excerpt sections
+- Save to reading list and delete actions
 
-### 👤 Profile Screen
-- Avatar with gradient background
-- Reading stats: books saved, total pages, library size
-- Full reading list with remove option
+**Profile**
+- Reading stats: books saved, total pages, full library size
+- Complete reading list with individual remove actions
 
-### ➕ Add a Book
-- Bottom-sheet entry point offering "Browse Library" (API) or "Add Manually" (form)
-- Manual entry form with title, description, page count, excerpt, and publish date
+**Add Book**
+- Manual entry form: title, description, page count, excerpt
 
-### 🎨 Design System
-- **Typography** — Playfair Display (headings) + Inter (body) via Google Fonts
-- **Colour palette** — Navy, Gold, Silver brand colours; full Material3 dark/light schemes
-- **Animations** — spring-based swipe-to-delete, animated dot indicators, fade transitions, splash screen scale animation
+**Offline Support**
+- All API responses are cached in Room; the reading list is always available without a network connection
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 BookVault/
-├── app/src/main/java/com/example/bookvault/
-│   ├── data/
-│   │   ├── local/          # Room database, DAOs, entities, mappers
-│   │   ├── remote/         # Ktor HTTP client, BookApiService, DTOs
-│   │   └── repository/     # BookRepositoryImpl, SavedBookRepositoryImpl
-│   ├── di/                 # Koin modules (AppModule, DatabaseModule, NetworkModule)
-│   ├── domain/
-│   │   ├── model/          # Book, SavedBook domain models
-│   │   ├── repository/     # Repository interfaces
-│   │   └── usecase/        # GetBooksUseCase, SaveBookUseCase, etc.
-│   └── presentation/
-│       ├── components/     # BookCoverPlaceholder (shared composable)
-│       ├── navigation/     # NavGraph, Screen sealed class
-│       ├── screens/        # HomeScreen, BrowseScreen, BookDetailScreen,
-│       │                   #   ProfileScreen, AddBookScreen, SplashScreen
-│       ├── ui/theme/       # Color, Type (fonts), Theme
-│       ├── viewmodel/      # BookViewModel, BookUiState
-│       └── MainShell.kt    # Root scaffold with bottom navigation
-├── res/
-│   ├── drawable/           # Genre card images
-│   ├── font/               # Downloadable font XMLs (Playfair Display, Inter)
-│   └── values/             # Colors, strings, font_certs, preloaded_fonts
-└── AndroidManifest.xml
+├── data/
+│   ├── local/          # Room database, DAOs, entities, mappers
+│   ├── remote/         # Ktor client, BookApiService, DTOs
+│   └── repository/     # BookRepositoryImpl, SavedBookRepositoryImpl
+├── di/                 # Koin modules (App, Database, Network)
+├── domain/
+│   ├── model/          # Book, SavedBook
+│   ├── repository/     # Repository interfaces
+│   └── usecase/        # GetBooks, SaveBook, DeleteSavedBook, IsBookSaved, etc.
+└── presentation/
+    ├── components/     # BookCoverPlaceholder
+    ├── navigation/     # NavGraph, Screen
+    ├── screens/        # Home, Browse, Detail, Profile, AddBook, Splash
+    ├── ui/theme/       # Color, Type, Theme
+    ├── viewmodel/      # BookViewModel, BookUiState
+    └── MainShell.kt    # Root scaffold with bottom navigation bar
 ```
 
-**Pattern:** `UI (Compose) → ViewModel → Use Cases → Repository → [Room | Ktor]`
+**Data flow:** `Compose UI → ViewModel (StateFlow) → Use Cases → Repository → Room / Ktor`
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Library |
 |---|---|
-| **UI** | Jetpack Compose 1.7, Material3 |
-| **Navigation** | Navigation-Compose |
-| **ViewModel** | AndroidX ViewModel + StateFlow |
-| **DI** | Koin 3.x |
-| **Networking** | Ktor (Android engine) + Kotlinx Serialization |
-| **Database** | Room 2 (SQLite) |
-| **Fonts** | Google Fonts via `ui-text-google-fonts` |
-| **Language** | Kotlin 100% |
-| **Min SDK** | 26 (Android 8.0) |
-| **Compile SDK** | 35 |
+| UI | Jetpack Compose 1.7, Material3 |
+| Navigation | Navigation-Compose |
+| State | AndroidX ViewModel + StateFlow |
+| Dependency Injection | Koin 3.x |
+| Networking | Ktor (Android engine) + Kotlinx Serialization |
+| Local Database | Room 2 |
+| Language | Kotlin |
+| Min SDK | 26 (Android 8.0) |
+| Compile SDK | 35 |
 
 ---
 
-## 🌐 API
+## API
 
-BookVault uses the free **[FakeRestAPI](https://fakerestapi.azurewebsites.net/)** for book data:
+Uses the free [FakeRestAPI](https://fakerestapi.azurewebsites.net/) for book data.
 
-| Endpoint | Usage |
-|---|---|
-| `GET /api/v1/Books` | Fetch full book catalogue |
-| `GET /api/v1/Books/{id}` | Fetch book detail |
-| `POST /api/v1/Books` | Add a new book |
-| `DELETE /api/v1/Books/{id}` | Delete a book |
-
-Data is cached in Room so the app works offline after the first successful fetch.
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/v1/Books` | Fetch full catalogue |
+| GET | `/api/v1/Books/{id}` | Fetch single book |
+| POST | `/api/v1/Books` | Add a book |
+| DELETE | `/api/v1/Books/{id}` | Delete a book |
 
 ---
 
-## 🚀 Getting Started
+## Database Schema
 
-### Prerequisites
-- Android Studio Hedgehog or newer
-- JDK 17+
-- Android device or emulator running API 26+
-- Internet connection (for book data and font download on first launch)
-
-### Build & Run
-
-```bash
-# Clone the repository
-git clone https://github.com/your-username/BookVault.git
-cd BookVault
-
-# Open in Android Studio and run, or build from CLI:
-./gradlew assembleDebug
-```
-
-Install the generated APK:
-```bash
-adb install app/build/outputs/apk/debug/app-debug.apk
-```
-
----
-
-## 📁 Adding Screenshots
-
-1. Run the app on your device or emulator
-2. In Android Studio, open **View → Tool Windows → Device Manager**
-3. Click the **camera icon** to take a screenshot, or use:
-   ```bash
-   adb shell screencap -p /sdcard/screen.png
-   adb pull /sdcard/screen.png screenshots/
-   ```
-4. Save your images to the `screenshots/` folder with these names:
-
-   | File | Screen |
-   |---|---|
-   | `screenshots/home.png` | Home screen with carousel |
-   | `screenshots/detail.png` | Book detail screen |
-   | `screenshots/browse.png` | Browse / search screen |
-   | `screenshots/profile.png` | Profile screen |
-   | `screenshots/dark_mode.png` | Any screen in dark theme |
-   | `screenshots/splash.png` | Splash / launch screen |
-
----
-
-## 🗂️ Database Schema
-
-**Version 2** — managed by Room with `MIGRATION_1_2`
+Room database version 2, migrated from version 1 via `MIGRATION_1_2`.
 
 ```sql
--- Books table (cached from API)
 CREATE TABLE books (
     id          INTEGER NOT NULL PRIMARY KEY,
     title       TEXT    NOT NULL,
@@ -210,7 +125,6 @@ CREATE TABLE books (
     publishDate TEXT    NOT NULL
 );
 
--- Saved books table (user's reading list)
 CREATE TABLE saved_books (
     id          INTEGER NOT NULL PRIMARY KEY,
     title       TEXT    NOT NULL,
@@ -218,46 +132,43 @@ CREATE TABLE saved_books (
     pageCount   INTEGER NOT NULL,
     excerpt     TEXT    NOT NULL,
     publishDate TEXT    NOT NULL,
-    savedAt     INTEGER NOT NULL   -- Unix timestamp ms
+    savedAt     INTEGER NOT NULL
 );
 ```
 
 ---
 
-## 🔮 Roadmap
+## Getting Started
 
-- [ ] Replace placeholder author data with a real author API
-- [ ] Implement actual "Read Now" in-app reader (ePub / PDF viewer)
-- [ ] Replace placeholder reviews with a review backend
-- [ ] Add filtering and sorting to the Browse screen
-- [ ] Add reading progress tracking per book
-- [ ] Notification reminders to keep reading
-- [ ] ProGuard/R8 release build optimisation
+**Prerequisites**
+- Android Studio Hedgehog or newer
+- JDK 17+
+- Emulator or physical device running API 26+
 
----
+**Run**
 
-## 📄 License
-
-```
-MIT License
-
-Copyright (c) 2026 BookVault
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+```bash
+git clone https://github.com/aviavinas01/BookVault.git
+cd BookVault
+./gradlew assembleDebug
+adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ---
 
-<div align="center">
+## Roadmap
 
-Made with ❤
+- Replace placeholder author data with a real author API
+- Implement in-app reader (ePub / PDF)
+- Add filtering and sorting to the Browse screen
+- Reading progress tracking per book
+- Push notification reading reminders
+- R8 release build optimisation
 
-</div>
+---
+
+## License
+
+MIT License. Copyright (c) 2026 BookVault.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
