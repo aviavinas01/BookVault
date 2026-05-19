@@ -9,13 +9,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -24,18 +22,27 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// Generates a unique but consistent gradient per book title
+// Matte flat colour palette — no gradients, no gloss
+private val mattePalette = listOf(
+    Color(0xFF14213D), // Navy
+    Color(0xFF1D2D44), // Dark Navy
+    Color(0xFF4E342E), // Dark Brown
+    Color(0xFF1B4332), // Forest Green
+    Color(0xFF1A237E), // Deep Indigo
+    Color(0xFF4A148C), // Deep Plum
+    Color(0xFF37474F), // Blue Grey
+    Color(0xFF263238), // Dark Teal
+)
+
+fun generateBookColor(title: String): Color {
+    val index = kotlin.math.abs(title.hashCode()) % mattePalette.size
+    return mattePalette[index]
+}
+
+// Keep old signature alias so existing call sites don't break
 fun generateBookColors(title: String): Pair<Color, Color> {
-    val gradients = listOf(
-        Pair(Color(0xFFFCA311), Color(0xFF14213D)), // Gold to Navy
-        Pair(Color(0xFF14213D), Color(0xFFE5E5E5)), // Navy to Silver
-        Pair(Color(0xFFE5E5E5), Color(0xFFFCA311)), // Silver to Gold
-        Pair(Color(0xFF000000), Color(0xFFFCA311)), // Black to Gold
-        Pair(Color(0xFF14213D), Color(0xFF000000)), // Navy to Black
-        Pair(Color(0xFFFCA311), Color(0xFFFFFFFF)), // Gold to White
-    )
-    val index = kotlin.math.abs(title.hashCode()) % gradients.size
-    return gradients[index]
+    val c = generateBookColor(title)
+    return Pair(c, c)
 }
 
 fun getInitials(title: String): String {
@@ -53,18 +60,14 @@ fun BookCoverPlaceholder(
     size: Dp = 56.dp,
     cornerRadius: Dp = 10.dp
 ) {
-    val (startColor, endColor) = generateBookColors(title)
+    val bgColor = generateBookColor(title)
     val initials = getInitials(title)
 
     Box(
         modifier = Modifier
             .size(width = size * 0.7f, height = size)
             .clip(RoundedCornerShape(cornerRadius))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(startColor, endColor)
-                )
-            ),
+            .background(bgColor),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -79,18 +82,14 @@ fun BookCoverPlaceholder(
 
 @Composable
 fun LargeBookCover(title: String) {
-    val (startColor, endColor) = generateBookColors(title)
+    val bgColor = generateBookColor(title)
     val initials = getInitials(title)
 
     Box(
         modifier = Modifier
             .size(width = 140.dp, height = 200.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(startColor, endColor)
-                )
-            ),
+            .background(bgColor),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -107,7 +106,7 @@ fun LargeBookCover(title: String) {
             Spacer(Modifier.height(8.dp))
             Text(
                 text = title,
-                color = Color.White.copy(alpha = 0.7f),
+                color = Color.White.copy(alpha = 0.8f),
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,

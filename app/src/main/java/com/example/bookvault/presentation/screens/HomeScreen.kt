@@ -450,27 +450,27 @@ private fun FeaturedBooksCarousel(
 
 @Composable
 private fun FeaturedBookCard(book: Book, onClick: () -> Unit) {
-    val gradients = listOf(
-        listOf(Color(0xFF14213D), Color(0xFF1D2D44)),
-        listOf(Color(0xFF1A1A2E), Color(0xFF16213E)),
-        listOf(Color(0xFF2D1B69), Color(0xFF11998E)),
-        listOf(Color(0xFF4E342E), Color(0xFF1A1A2E)),
-        listOf(Color(0xFF1B4332), Color(0xFF2D6A4F))
-    )
-    val grad = remember(book.title) {
-        gradients[(book.title.hashCode() and 0x7FFFFFFF) % gradients.size]
+    val bgColor = remember(book.title) {
+        val palette = listOf(
+            Color(0xFF14213D),
+            Color(0xFF1D2D44),
+            Color(0xFF2D1B69),
+            Color(0xFF4E342E),
+            Color(0xFF1B4332)
+        )
+        palette[(book.title.hashCode() and 0x7FFFFFFF) % palette.size]
     }
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(220.dp),
         shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Brush.linearGradient(colors = grad))
+                    .background(bgColor)
             )
             Box(
                 modifier = Modifier
@@ -737,14 +737,7 @@ private fun GenreCard(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Black.copy(alpha = 0.15f),
-                                Color.Black.copy(alpha = 0.65f)
-                            )
-                        )
-                    )
+                    .background(Color.Black.copy(alpha = 0.45f))
             )
             Text(
                 text = name,
