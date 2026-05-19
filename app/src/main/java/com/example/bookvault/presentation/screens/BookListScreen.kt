@@ -150,7 +150,6 @@ fun BookListScreen(
                     }
                 }
 
-                // Error snackbar
                 error?.let { err ->
                     Snackbar(
                         modifier = Modifier
@@ -300,7 +299,6 @@ private fun SwipeToDeleteBookCard(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
         ) {
-            // Delete background revealed on swipe
             AnimatedVisibility(
                 visible = showDelete,
                 enter = fadeIn(),
@@ -336,7 +334,6 @@ private fun SwipeToDeleteBookCard(
                 }
             }
 
-            // Book card on top
             BookCard(
                 book = book,
                 onClick = onClick,
@@ -393,7 +390,6 @@ private fun BookCard(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Book spine accent bar
             Box(
                 modifier = Modifier
                     .width(4.dp)

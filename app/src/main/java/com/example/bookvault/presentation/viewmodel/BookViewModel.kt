@@ -15,21 +15,19 @@ import com.example.bookvault.domain.usecase.SaveBookUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class BookUiState(
-    // API books (for browse screen)
     val books: List<Book> = emptyList(),
-    val selectedBook: Book? = null,
-    // Saved books (personal list)
     val savedBooks: List<SavedBook> = emptyList(),
     val savedBookIds: Set<Int> = emptySet(),
-    // UI state
+    val selectedBook: Book? = null,
     val isLoading: Boolean = false,
-    val isBrowseLoading: Boolean = false,
     val error: String? = null,
-    val isSuccess: Boolean = false,
-    val saveSuccess: Boolean = false
+    val isSuccess: Boolean = false
 )
 
 class BookViewModel(
@@ -40,6 +38,7 @@ class BookViewModel(
     private val getSavedBooks: GetSavedBooksUseCase,
     private val saveBook: SaveBookUseCase,
     private val deleteSavedBook: DeleteSavedBookUseCase,
+    @Suppress("UnusedPrivateMember")
     private val isBookSaved: IsBookSavedUseCase
 ) : ViewModel() {
 
@@ -51,37 +50,24 @@ class BookViewModel(
         observeSavedBooks()
     }
 
-    // Observe saved books from Room as a Flow
-    // UI updates automatically when anything changes
     private fun observeSavedBooks() {
-        viewModelScope.launch {
-            getSavedBooks().collect { saved ->
-                _uiState.value = _uiState.value.copy(
-                    savedBooks = saved,
-                    savedBookIds = saved.map { it.id }.toSet()
-                )
-            }
-        }
+        getSavedBooks().onEach { saved ->
+            _uiState.update { it.copy(
+                savedBooks = saved,
+                savedBookIds = saved.map { it.id }.toSet()
+            ) }
+        }.launchIn(viewModelScope)
     }
 
     fun fetchBooks() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isBrowseLoading = true,
-                error = null
-            )
+            _uiState.update { it.copy(isLoading = true, error = null) }
             getBooks().fold(
                 onSuccess = { books ->
-                    _uiState.value = _uiState.value.copy(
-                        books = books,
-                        isBrowseLoading = false
-                    )
+                    _uiState.update { it.copy(books = books, isLoading = false) }
                 },
-                onFailure = { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isBrowseLoading = false,
-                        error = error.message ?: "Could not load books"
-                    )
+                onFailure = { e ->
+                    _uiState.update { it.copy(isLoading = false, error = e.message ?: "Something went wrong") }
                 }
             )
         }
@@ -89,83 +75,64 @@ class BookViewModel(
 
     fun fetchBookById(id: Int) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.update { it.copy(isLoading = true) }
             getBookById(id).fold(
                 onSuccess = { book ->
-                    _uiState.value = _uiState.value.copy(
-                        selectedBook = book,
-                        isLoading = false
-                    )
+                    _uiState.update { it.copy(selectedBook = book, isLoading = false) }
                 },
-                onFailure = { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = error.message
-                    )
+                onFailure = { e ->
+                    _uiState.update { it.copy(isLoading = false, error = e.message) }
+                }
+            )
+        }
+    }
+
+    fun submitBook(book: Book) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            addBook(book).fold(
+                onSuccess = {
+                    _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                    fetchBooks()
+                },
+                onFailure = { e ->
+                    _uiState.update { it.copy(isLoading = false, error = e.message) }
+                }
+            )
+        }
+    }
+
+    fun removeBook(id: Int) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            deleteBook(id).fold(
+                onSuccess = {
+                    _uiState.update { it.copy(isLoading = false) }
+                    fetchBooks()
+                },
+                onFailure = { e ->
+                    _uiState.update { it.copy(isLoading = false, error = e.message) }
                 }
             )
         }
     }
 
     fun saveBookToList(book: Book) {
-        viewModelScope.launch {
-            saveBook(book).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(saveSuccess = true)
-                },
-                onFailure = { error ->
-                    _uiState.value = _uiState.value.copy(error = error.message)
-                }
-            )
-        }
+        viewModelScope.launch { saveBook(book) }
     }
 
     fun removeFromList(id: Int) {
-        viewModelScope.launch {
-            deleteSavedBook(id)
-        }
+        viewModelScope.launch { deleteSavedBook(id) }
     }
 
-    fun addBook(book: Book) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            addBook.invoke(book).fold(
-                onSuccess = { saved ->
-                    saveBook(saved)
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isSuccess = true
-                    )
-                },
-                onFailure = { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = error.message
-                    )
-                }
-            )
-        }
-    }
-
-    fun deleteBook(id: Int) {
-        viewModelScope.launch {
-            deleteBook.invoke(id)
-            deleteSavedBook(id)
-        }
-    }
-
-    fun isBookSaved(id: Int): Boolean =
-        _uiState.value.savedBookIds.contains(id)
+    // Derived from the live savedBooks state — no extra DB call needed
+    fun isBookSaved(id: Int): Boolean = _uiState.value.savedBooks.any { it.id == id }
 
     fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.update { it.copy(error = null) }
     }
 
     fun clearSuccess() {
-        _uiState.value = _uiState.value.copy(isSuccess = false)
-    }
-
-    fun clearSaveSuccess() {
-        _uiState.value = _uiState.value.copy(saveSuccess = false)
+        _uiState.update { it.copy(isSuccess = false) }
     }
 }

@@ -5,20 +5,23 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
-import androidx.compose.material.icons.rounded.Bookmark
-import androidx.compose.material.icons.rounded.BookmarkBorder
-import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.bookvault.presentation.components.BookCoverPlaceholder
 import com.example.bookvault.presentation.viewmodel.BookViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,48 +29,10 @@ import com.example.bookvault.presentation.viewmodel.BookViewModel
 fun BookDetailScreen(
     viewModel: BookViewModel,
     onBack: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val book = uiState.selectedBook
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = {
-                Text(
-                    "Delete Book",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            },
-            text = {
-                Text(
-                    "Are you sure you want to remove \"${book?.title}\" from your vault?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showDeleteDialog = false
-                        onDelete()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) { Text("Delete") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
-                }
-            },
-            shape = RoundedCornerShape(20.dp)
-        )
-    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -87,28 +52,21 @@ fun BookDetailScreen(
                 },
                 title = { },
                 actions = {
-                    // Save / unsave toggle
                     val isSaved = uiState.savedBookIds.contains(book?.id ?: -1)
                     IconButton(
                         onClick = {
-                            book?.let { viewModel.saveBookToList(it) }
-                        },
-                        enabled = !isSaved
+                            book?.let {
+                                if (isSaved) viewModel.removeFromList(it.id)
+                                else viewModel.saveBookToList(it)
+                            }
+                        }
                     ) {
                         Icon(
                             imageVector = if (isSaved) Icons.Rounded.Bookmark
                             else Icons.Rounded.BookmarkBorder,
-                            contentDescription = if (isSaved) "Saved" else "Save to list",
+                            contentDescription = if (isSaved) "Remove from list" else "Save to list",
                             tint = if (isSaved) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(
-                            Icons.Rounded.Delete,
-                            contentDescription = "Delete",
-                            tint = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -120,14 +78,8 @@ fun BookDetailScreen(
             label = "detail_content"
         ) { isLoading ->
             if (isLoading) {
-                Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(32.dp)
-                    )
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
                 }
             } else if (book != null) {
                 Column(
@@ -138,6 +90,8 @@ fun BookDetailScreen(
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
+
+                    // ── Cover ──────────────────────────────────────────────
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -147,8 +101,12 @@ fun BookDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("📖", style = MaterialTheme.typography.displaySmall)
-                            Spacer(Modifier.height(16.dp))
+                            BookCoverPlaceholder(
+                                title = book.title,
+                                size = 130.dp,
+                                cornerRadius = 16.dp
+                            )
+                            Spacer(Modifier.height(20.dp))
                             Text(
                                 text = book.title.ifBlank { "Untitled" },
                                 style = MaterialTheme.typography.headlineMedium,
@@ -158,6 +116,10 @@ fun BookDetailScreen(
                         }
                     }
 
+                    // ── Author ─────────────────────────────────────────────
+                    AuthorRow()
+
+                    // ── Stats row ──────────────────────────────────────────
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -168,12 +130,21 @@ fun BookDetailScreen(
                             modifier = Modifier.weight(1f)
                         )
                         StatChip(
+                            label = "Rating",
+                            value = "—",
+                            modifier = Modifier.weight(1f)
+                        )
+                        StatChip(
                             label = "ID",
                             value = "#${book.id}",
                             modifier = Modifier.weight(1f)
                         )
                     }
 
+                    // ── Action Buttons ─────────────────────────────────────
+                    ActionButtons()
+
+                    // ── Description ────────────────────────────────────────
                     if (book.description.isNotBlank()) {
                         DetailSection(title = "Description") {
                             Text(
@@ -185,17 +156,19 @@ fun BookDetailScreen(
                         }
                     }
 
+                    // ── Excerpt ────────────────────────────────────────────
                     if (book.excerpt.isNotBlank()) {
                         DetailSection(title = "Excerpt") {
                             Text(
                                 text = book.excerpt,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                fontStyle = FontStyle.Italic
                             )
                         }
                     }
 
+                    // ── Published ──────────────────────────────────────────
                     if (book.publishDate.isNotBlank()) {
                         DetailSection(title = "Published") {
                             Text(
@@ -206,12 +179,246 @@ fun BookDetailScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(16.dp))
+                    // ── Reviews ────────────────────────────────────────────
+                    ReviewSection()
+
+                    Spacer(Modifier.height(24.dp))
                 }
             }
         }
     }
 }
+
+// ── Author Row ─────────────────────────────────────────────────────────────────
+
+@Composable
+private fun AuthorRow() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Rounded.Person,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Author",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "Unknown Author",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Icon(
+            Icons.Rounded.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+// ── Action Buttons ─────────────────────────────────────────────────────────────
+
+@Composable
+private fun ActionButtons() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Read Now — primary filled
+        Button(
+            onClick = { },
+            modifier = Modifier
+                .weight(1f)
+                .height(52.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            elevation = ButtonDefaults.buttonElevation(0.dp)
+        ) {
+            Icon(
+                Icons.Rounded.MenuBook,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "Read Now",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        // Download — outlined secondary
+        OutlinedButton(
+            onClick = { },
+            modifier = Modifier
+                .weight(1f)
+                .height(52.dp),
+            shape = RoundedCornerShape(14.dp),
+            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Icon(
+                Icons.Rounded.Download,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "Download",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+// ── Review Section ─────────────────────────────────────────────────────────────
+
+private data class PlaceholderReview(
+    val name: String,
+    val rating: Int,
+    val text: String
+)
+
+private val placeholderReviews = listOf(
+    PlaceholderReview("Alex M.", 5, "A fantastic read. The narrative keeps you engaged from the very first page to the last."),
+    PlaceholderReview("Jordan L.", 4, "Well written and thought-provoking. Would highly recommend to anyone who enjoys this genre."),
+    PlaceholderReview("Sam R.", 4, "Beautifully crafted story with memorable characters and vivid world-building.")
+)
+
+@Composable
+private fun ReviewSection() {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // Section header
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "REVIEWS",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.sp
+            )
+            Text(
+                text = "No reviews yet",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+
+        // Placeholder review cards
+        placeholderReviews.forEach { review ->
+            ReviewCard(review = review)
+        }
+    }
+}
+
+@Composable
+private fun ReviewCard(review: PlaceholderReview) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = review.name.first().toString(),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Text(
+                        text = review.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                StarRating(stars = review.rating)
+            }
+            Text(
+                text = review.text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = 20.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun StarRating(stars: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        repeat(5) { index ->
+            Icon(
+                imageVector = Icons.Rounded.Star,
+                contentDescription = null,
+                tint = if (index < stars) Color(0xFFFCA311)
+                else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                modifier = Modifier.size(14.dp)
+            )
+        }
+    }
+}
+
+// ── Reusable sub-components ────────────────────────────────────────────────────
 
 @Composable
 private fun StatChip(
@@ -222,9 +429,7 @@ private fun StatChip(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
@@ -261,7 +466,7 @@ private fun DetailSection(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold,
-            letterSpacing = MaterialTheme.typography.labelSmall.letterSpacing
+            letterSpacing = 1.sp
         )
         content()
         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))

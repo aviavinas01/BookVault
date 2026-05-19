@@ -6,10 +6,9 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.bookvault.presentation.MainShell
 import com.example.bookvault.presentation.screens.AddBookScreen
 import com.example.bookvault.presentation.screens.BookDetailScreen
-import com.example.bookvault.presentation.screens.BrowseScreen
-import com.example.bookvault.presentation.screens.HomeScreen
 import com.example.bookvault.presentation.screens.SplashScreen
 import com.example.bookvault.presentation.viewmodel.BookViewModel
 
@@ -24,6 +23,7 @@ fun NavGraph(
         navController = navController,
         startDestination = Screen.Splash.route
     ) {
+
         composable(Screen.Splash.route) {
             SplashScreen(
                 onNavigateToHome = {
@@ -34,33 +34,29 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.Home.route) {
-            HomeScreen(
-                viewModel = viewModel,
-                isDarkTheme = isDarkTheme,
-                onThemeToggle = onThemeToggle,
-                onBrowseClick = {
-                    navController.navigate(Screen.Browse.route)
-                },
-                onAddManuallyClick = {
-                    navController.navigate(Screen.AddBook.route)
-                },
-                onBookClick = { bookId ->
-                    viewModel.fetchBookById(bookId)
-                    navController.navigate(Screen.BookDetail.createRoute(bookId))
-                }
-            )
-        }
-
-        composable(Screen.Browse.route) {
-            BrowseScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() },
-                onBookClick = { bookId ->
-                    viewModel.fetchBookById(bookId)
-                    navController.navigate(Screen.BookDetail.createRoute(bookId))
-                }
-            )
+        // All three bottom nav tabs share MainShell
+        // MainShell internally switches content based on current route
+        // BookDetail and AddBook push on top of shell without bottom nav
+        listOf(
+            Screen.Home.route,
+            Screen.Discover.route,
+            Screen.Profile.route
+        ).forEach { route ->
+            composable(route) {
+                MainShell(
+                    navController = navController,
+                    viewModel = viewModel,
+                    isDarkTheme = isDarkTheme,
+                    onThemeToggle = onThemeToggle,
+                    onBookClick = { bookId ->
+                        viewModel.fetchBookById(bookId)
+                        navController.navigate(Screen.BookDetail.createRoute(bookId))
+                    },
+                    onAddManuallyClick = {
+                        navController.navigate(Screen.AddBook.route)
+                    }
+                )
+            }
         }
 
         composable(
@@ -71,10 +67,7 @@ fun NavGraph(
         ) {
             BookDetailScreen(
                 viewModel = viewModel,
-                onBack = { navController.popBackStack() },
-                onDelete = {
-                    navController.popBackStack()
-                }
+                onBack = { navController.popBackStack() }
             )
         }
 

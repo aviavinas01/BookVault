@@ -33,6 +33,7 @@ val databaseModule = module {
             "book_vault_db"
         )
             .addMigrations(MIGRATION_1_2)
+            .fallbackToDestructiveMigration()
             .build()
     }
     single { get<BookDatabase>().bookDao() }

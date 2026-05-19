@@ -27,18 +27,12 @@ import androidx.compose.ui.unit.sp
 // Generates a unique but consistent gradient per book title
 fun generateBookColors(title: String): Pair<Color, Color> {
     val gradients = listOf(
-        Pair(Color(0xFF2C3E50), Color(0xFF3498DB)),
-        Pair(Color(0xFF1A1A2E), Color(0xFF16213E)),
-        Pair(Color(0xFF2D1B69), Color(0xFF11998E)),
-        Pair(Color(0xFF373B44), Color(0xFF4286F4)),
-        Pair(Color(0xFF0F2027), Color(0xFF2C5364)),
-        Pair(Color(0xFF1F4037), Color(0xFF99F2C8)),
-        Pair(Color(0xFF3A1C71), Color(0xFFD76D77)),
-        Pair(Color(0xFF4A00E0), Color(0xFF8E2DE2)),
-        Pair(Color(0xFF134E5E), Color(0xFF71B280)),
-        Pair(Color(0xFF360033), Color(0xFF0B8793)),
-        Pair(Color(0xFF1D4350), Color(0xFFA43931)),
-        Pair(Color(0xFF0052D4), Color(0xFF4364F7)),
+        Pair(Color(0xFFFCA311), Color(0xFF14213D)), // Gold to Navy
+        Pair(Color(0xFF14213D), Color(0xFFE5E5E5)), // Navy to Silver
+        Pair(Color(0xFFE5E5E5), Color(0xFFFCA311)), // Silver to Gold
+        Pair(Color(0xFF000000), Color(0xFFFCA311)), // Black to Gold
+        Pair(Color(0xFF14213D), Color(0xFF000000)), // Navy to Black
+        Pair(Color(0xFFFCA311), Color(0xFFFFFFFF)), // Gold to White
     )
     val index = kotlin.math.abs(title.hashCode()) % gradients.size
     return gradients[index]

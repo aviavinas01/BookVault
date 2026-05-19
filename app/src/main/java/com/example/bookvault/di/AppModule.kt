@@ -18,23 +18,19 @@ import org.koin.dsl.module
 
 val appModule = module {
 
-    // Repositories
     single<BookRepository> { BookRepositoryImpl(get(), get()) }
     single<SavedBookRepository> { SavedBookRepositoryImpl(get()) }
 
-    // API UseCases
     factory { GetBooksUseCase(get()) }
     factory { GetBookByIdUseCase(get()) }
     factory { AddBookUseCase(get()) }
     factory { DeleteBookUseCase(get()) }
 
-    // Saved Books UseCases
     factory { GetSavedBooksUseCase(get()) }
     factory { SaveBookUseCase(get()) }
     factory { DeleteSavedBookUseCase(get()) }
     factory { IsBookSavedUseCase(get()) }
 
-    // ViewModel
     viewModel {
         BookViewModel(
             getBooks = get(),

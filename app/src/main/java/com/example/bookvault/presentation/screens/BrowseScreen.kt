@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -81,12 +82,12 @@ fun BrowseScreen(
         }
     }
 
-    LaunchedEffect(uiState.saveSuccess) {
-        if (uiState.saveSuccess) {
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
             scope.launch {
                 snackbarHostState.showSnackbar("Added to your reading list")
             }
-            viewModel.clearSaveSuccess()
+            viewModel.clearSuccess()
         }
     }
 
@@ -95,6 +96,7 @@ fun BrowseScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
+                windowInsets = WindowInsets(0.dp),
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 ),
@@ -175,7 +177,7 @@ fun BrowseScreen(
             )
 
             when {
-                uiState.isBrowseLoading -> {
+                uiState.isLoading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator(
@@ -225,7 +227,9 @@ fun BrowseScreen(
                                 isSaved = viewModel.isBookSaved(book.id),
                                 onClick = { onBookClick(book.id) },
                                 onSaveToggle = {
-                                    if (!viewModel.isBookSaved(book.id)) {
+                                    if (viewModel.isBookSaved(book.id)) {
+                                        viewModel.removeFromList(book.id)
+                                    } else {
                                         viewModel.saveBookToList(book)
                                     }
                                 }
@@ -307,7 +311,7 @@ private fun BrowseBookCard(
                 Icon(
                     imageVector = if (isSaved) Icons.Rounded.Bookmark
                     else Icons.Rounded.BookmarkBorder,
-                    contentDescription = if (isSaved) "Saved" else "Save",
+                    contentDescription = if (isSaved) "Remove from list" else "Save to list",
                     tint = if (isSaved) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp)

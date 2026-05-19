@@ -8,35 +8,40 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = Gold,
+    onPrimary = Navy,
+    secondary = Silver,
+    onSecondary = Navy,
+    tertiary = White,
+    background = Navy,
+    onBackground = Silver,
+    surface = Color(0xFF1D2D44),
+    onSurface = Silver,
+    outline = Silver.copy(alpha = 0.5f)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = Navy,
+    onPrimary = Gold,
+    secondary = Gold,
+    onSecondary = Navy,
+    tertiary = Silver,
+    background = White,
+    onBackground = Navy,
+    surface = Silver.copy(alpha = 0.3f),
+    onSurface = Navy,
+    outline = Navy.copy(alpha = 0.2f)
 )
 
 @Composable
 fun KMP_BookStoreTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Dynamic color is disabled to ensure our custom Gold/Silver/Navy theme is always applied
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

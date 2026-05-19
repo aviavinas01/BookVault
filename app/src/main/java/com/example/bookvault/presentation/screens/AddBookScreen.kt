@@ -84,7 +84,7 @@ fun AddBookScreen(
                             excerpt = excerpt.trim(),
                             publishDate = java.time.Instant.now().toString()
                         )
-                        viewModel.addBook(book)
+                        viewModel.submitBook(book)
                     },
                     modifier = Modifier
                         .fillMaxWidth()

@@ -10,32 +10,34 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary          = Neutral900,
-    onPrimary        = White,
-    secondary        = Neutral600,
-    onSecondary      = White,
-    background       = Neutral50,
-    onBackground     = Neutral900,
-    surface          = White,
-    onSurface        = Neutral900,
-    surfaceVariant   = Neutral100,
-    onSurfaceVariant = Neutral600,
-    outline          = Neutral200,
+    primary          = Navy,
+    onPrimary        = Gold,
+    secondary        = Gold,
+    onSecondary      = Navy,
+    tertiary         = Silver,
+    background       = White,
+    onBackground     = Navy,
+    surface          = Silver.copy(alpha = 0.3f),
+    onSurface        = Navy,
+    surfaceVariant   = Silver,
+    onSurfaceVariant = Navy,
+    outline          = Navy.copy(alpha = 0.2f),
     error            = ErrorRed,
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary          = White,
-    onPrimary        = Neutral900,
-    secondary        = Neutral400,
-    onSecondary      = Neutral900,
-    background       = Neutral900,
-    onBackground     = White,
-    surface          = Neutral800,
-    onSurface        = White,
-    surfaceVariant   = Neutral700,
-    onSurfaceVariant = Neutral400,
-    outline          = Neutral600,
+    primary          = Gold,
+    onPrimary        = Navy,
+    secondary        = Silver,
+    onSecondary      = Navy,
+    tertiary         = White,
+    background       = Navy,
+    onBackground     = Silver,
+    surface          = NavyLight,
+    onSurface        = Silver,
+    surfaceVariant   = NavyLight.copy(alpha = 0.8f),
+    onSurfaceVariant = Silver,
+    outline          = Silver.copy(alpha = 0.3f),
     error            = ErrorRed,
 )
 
@@ -51,8 +53,11 @@ fun BookVaultTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
             WindowCompat.getInsetsController(window, view)
                 .isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(window, view)
+                .isAppearanceLightNavigationBars = !darkTheme
         }
     }
 
