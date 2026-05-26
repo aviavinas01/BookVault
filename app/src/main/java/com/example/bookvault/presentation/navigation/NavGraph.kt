@@ -34,12 +34,13 @@ fun NavGraph(
             )
         }
 
-        // All three bottom nav tabs share MainShell
+        // All bottom nav tabs share MainShell
         // MainShell internally switches content based on current route
         // BookDetail and AddBook push on top of shell without bottom nav
         listOf(
             Screen.Home.route,
             Screen.Discover.route,
+            Screen.Shelf.route,
             Screen.Profile.route
         ).forEach { route ->
             composable(route) {

@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +30,7 @@ import com.example.bookvault.presentation.navigation.Screen
 import com.example.bookvault.presentation.screens.BrowseScreen
 import com.example.bookvault.presentation.screens.HomeScreen
 import com.example.bookvault.presentation.screens.ProfileScreen
+import com.example.bookvault.presentation.screens.ShelfScreen
 import com.example.bookvault.presentation.viewmodel.BookViewModel
 
 data class BottomNavItem(
@@ -57,6 +59,11 @@ fun MainShell(
             label = "Discover",
             route = Screen.Discover.route,
             icon = Icons.Rounded.AutoStories
+        ),
+        BottomNavItem(
+            label = "Shelf",
+            route = Screen.Shelf.route,
+            icon = Icons.Rounded.MenuBook
         ),
         BottomNavItem(
             label = "Profile",
@@ -132,6 +139,12 @@ fun MainShell(
                     BrowseScreen(
                         viewModel = viewModel,
                         onBack = {},
+                        onBookClick = onBookClick
+                    )
+                }
+                Screen.Shelf.route -> {
+                    ShelfScreen(
+                        viewModel = viewModel,
                         onBookClick = onBookClick
                     )
                 }
