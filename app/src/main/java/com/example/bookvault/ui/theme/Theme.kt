@@ -8,39 +8,42 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Gold,
-    onPrimary = Navy,
-    secondary = Silver,
-    onSecondary = Navy,
-    tertiary = White,
-    background = Navy,
-    onBackground = Silver,
-    surface = Color(0xFF1D2D44),
-    onSurface = Silver,
-    outline = Silver.copy(alpha = 0.5f)
+    primary = VioletPrimary,
+    onPrimary = VioletOnPrimary,
+    secondary = SunsetSecondary,
+    onSecondary = CharcoalBackground,
+    tertiary = TextLight,
+    background = CharcoalBackground,
+    onBackground = TextLight,
+    surface = CharcoalSurface,
+    onSurface = TextLight,
+    surfaceVariant = CharcoalSurface.copy(alpha = 0.7f),
+    onSurfaceVariant = TextLight.copy(alpha = 0.7f),
+    outline = TextLight.copy(alpha = 0.2f)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Navy,
-    onPrimary = Gold,
-    secondary = Gold,
-    onSecondary = Navy,
-    tertiary = Silver,
-    background = White,
-    onBackground = Navy,
-    surface = Silver.copy(alpha = 0.3f),
-    onSurface = Navy,
-    outline = Navy.copy(alpha = 0.2f)
+    primary = PlumPrimary,
+    onPrimary = PlumOnPrimary,
+    secondary = CoralSecondary,
+    onSecondary = PlumOnPrimary,
+    tertiary = TextDark,
+    background = CreamBackground,
+    onBackground = TextDark,
+    surface = PaperSurface,
+    onSurface = TextDark,
+    surfaceVariant = PaperSurface.copy(alpha = 0.7f),
+    onSurfaceVariant = TextDark.copy(alpha = 0.7f),
+    outline = PlumPrimary.copy(alpha = 0.15f)
 )
 
 @Composable
 fun KMP_BookStoreTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is disabled to ensure our custom Gold/Silver/Navy theme is always applied
+    // Dynamic color disabled to ensure our custom premium theme is applied
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {

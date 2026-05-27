@@ -385,7 +385,7 @@ private fun FeaturedBooksCarousel(
                 .fillMaxWidth()
                 .height(220.dp)
                 .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(24.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
@@ -411,13 +411,21 @@ private fun FeaturedBooksCarousel(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         HorizontalPager(
             state = pagerState,
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            pageSpacing = 12.dp,
+            contentPadding = PaddingValues(horizontal = 32.dp),
+            pageSpacing = 16.dp,
             modifier = Modifier.fillMaxWidth()
         ) { page ->
+            val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
+            val scale = 1f - (kotlin.math.abs(pageOffset) * 0.15f).coerceIn(0f, 0.15f)
+            
             FeaturedBookCard(
                 book = books[page],
-                onClick = { onBookClick(books[page].id) }
+                onClick = { onBookClick(books[page].id) },
+                modifier = Modifier.androidx.compose.ui.graphics.graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    alpha = 1f - (kotlin.math.abs(pageOffset) * 0.3f).coerceIn(0f, 0.5f)
+                }
             )
         }
 
@@ -449,28 +457,33 @@ private fun FeaturedBooksCarousel(
 }
 
 @Composable
-private fun FeaturedBookCard(book: Book, onClick: () -> Unit) {
-    val bgColor = remember(book.title) {
-        val palette = listOf(
-            Color(0xFF14213D),
-            Color(0xFF1D2D44),
-            Color(0xFF2D1B69),
-            Color(0xFF4E342E),
-            Color(0xFF1B4332)
+private fun FeaturedBookCard(
+    book: Book, 
+    modifier: Modifier = Modifier, 
+    onClick: () -> Unit
+) {
+    val bgGradient = remember(book.title) {
+        val palettes = listOf(
+            listOf(Color(0xFF4A154B), Color(0xFF6B1D6C)),
+            listOf(Color(0xFF2D1B69), Color(0xFF4A2B99)),
+            listOf(Color(0xFF1B4332), Color(0xFF2D6A4F)),
+            listOf(Color(0xFF4E342E), Color(0xFF795548)),
+            listOf(Color(0xFFB47AE5), Color(0xFF8B5FBF))
         )
-        palette[(book.title.hashCode() and 0x7FFFFFFF) % palette.size]
+        val palette = palettes[(book.title.hashCode() and 0x7FFFFFFF) % palettes.size]
+        Brush.linearGradient(colors = palette)
     }
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(220.dp),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        modifier = modifier.fillMaxWidth().height(220.dp),
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(bgColor)
+                    .background(bgGradient)
             )
             Box(
                 modifier = Modifier
@@ -484,7 +497,7 @@ private fun FeaturedBookCard(book: Book, onClick: () -> Unit) {
                     .align(Alignment.TopStart)
                     .padding(14.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White.copy(alpha = 0.18f))
+                    .background(Color.White.copy(alpha = 0.2f))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Text(
@@ -505,7 +518,7 @@ private fun FeaturedBookCard(book: Book, onClick: () -> Unit) {
                     Text(
                         text = "${book.pageCount} pages",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = Color.White.copy(alpha = 0.8f)
                     )
                 }
                 Text(
