@@ -54,6 +54,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -421,7 +422,7 @@ private fun FeaturedBooksCarousel(
             FeaturedBookCard(
                 book = books[page],
                 onClick = { onBookClick(books[page].id) },
-                modifier = Modifier.androidx.compose.ui.graphics.graphicsLayer {
+                modifier = Modifier.graphicsLayer {
                     scaleX = scale
                     scaleY = scale
                     alpha = 1f - (kotlin.math.abs(pageOffset) * 0.3f).coerceIn(0f, 0.5f)
