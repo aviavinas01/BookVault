@@ -23,7 +23,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -110,54 +109,26 @@ fun ShelfScreen(
             )
         }
     ) { padding ->
-        if (uiState.savedBooks.isEmpty()) {
-            EmptyShelfState(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)
-            ) {
-                val rows = uiState.savedBooks.chunked(8)
-                items(rows.size) { index ->
-                    ShelfRow(
-                        books = rows[index],
-                        rowIndex = index,
-                        onBookClick = onBookClick
-                    )
-                }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)
+        ) {
+            val rows = uiState.savedBooks.chunked(8)
+            val totalShelves = maxOf(MinShelves, rows.size)
+            items(totalShelves) { index ->
+                ShelfRow(
+                    books = rows.getOrNull(index) ?: emptyList(),
+                    rowIndex = index,
+                    onBookClick = onBookClick
+                )
             }
         }
     }
 }
 
-@Composable
-private fun EmptyShelfState(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Your bookshelf is empty",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = InkBlack
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Save books and they will appear here naturally.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = InkBlack.copy(alpha = 0.6f),
-            textAlign = TextAlign.Center
-        )
-    }
-}
+private const val MinShelves = 4
 
 @Composable
 private fun ShelfRow(
