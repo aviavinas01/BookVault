@@ -8,7 +8,8 @@ fun BookEntity.toDomain(): Book = Book(
     description = description,
     pageCount = pageCount,
     excerpt = excerpt,
-    publishDate = publishDate
+    publishDate = publishDate,
+    coverUrl = coverUrl
 )
 
 fun Book.toEntity(): BookEntity = BookEntity(
@@ -17,5 +18,6 @@ fun Book.toEntity(): BookEntity = BookEntity(
     description = description,
     pageCount = pageCount,
     excerpt = excerpt,
-    publishDate = publishDate
+    publishDate = publishDate,
+    coverUrl = coverUrl
 )

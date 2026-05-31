@@ -11,5 +11,6 @@ data class BookEntity(
     val description: String,
     val pageCount: Int,
     val excerpt: String,
-    val publishDate: String
+    val publishDate: String,
+    val coverUrl: String? = null
 )

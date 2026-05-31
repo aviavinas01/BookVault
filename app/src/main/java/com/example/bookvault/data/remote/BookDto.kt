@@ -10,7 +10,8 @@ data class BookDto(
     val description: String,
     val pageCount: Int,
     val excerpt: String,
-    val publishDate: String? = null
+    val publishDate: String? = null,
+    val coverUrl: String? = null
 )
 
 fun BookDto.toDomain() = Book(
@@ -19,7 +20,8 @@ fun BookDto.toDomain() = Book(
     description = description,
     pageCount = pageCount,
     excerpt = excerpt,
-    publishDate = publishDate.orEmpty()
+    publishDate = publishDate.orEmpty(),
+    coverUrl = coverUrl
 )
 
 fun Book.toDto() = BookDto(
@@ -28,5 +30,6 @@ fun Book.toDto() = BookDto(
     description = description,
     pageCount = pageCount,
     excerpt = excerpt,
-    publishDate = publishDate
+    publishDate = publishDate,
+    coverUrl = coverUrl
 )

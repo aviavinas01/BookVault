@@ -12,5 +12,6 @@ data class SavedBookEntity(
     val pageCount: Int,
     val excerpt: String,
     val publishDate: String,
+    val coverUrl: String? = null,
     val savedAt: Long = System.currentTimeMillis()
 )

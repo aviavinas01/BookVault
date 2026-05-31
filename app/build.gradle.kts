@@ -74,6 +74,9 @@ dependencies {
     // DataStore
     implementation(libs.datastore.preferences)
 
+    // Coil (image loading)
+    implementation(libs.coil.compose)
+
     // Koin
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)

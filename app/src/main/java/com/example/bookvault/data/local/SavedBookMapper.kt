@@ -10,6 +10,7 @@ fun SavedBookEntity.toDomain(): SavedBook = SavedBook(
     pageCount = pageCount,
     excerpt = excerpt,
     publishDate = publishDate,
+    coverUrl = coverUrl,
     savedAt = savedAt
 )
 
@@ -20,6 +21,7 @@ fun SavedBook.toEntity(): SavedBookEntity = SavedBookEntity(
     pageCount = pageCount,
     excerpt = excerpt,
     publishDate = publishDate,
+    coverUrl = coverUrl,
     savedAt = savedAt
 )
 
@@ -29,5 +31,6 @@ fun Book.toSavedBookEntity(): SavedBookEntity = SavedBookEntity(
     description = description,
     pageCount = pageCount,
     excerpt = excerpt,
-    publishDate = publishDate
+    publishDate = publishDate,
+    coverUrl = coverUrl
 )

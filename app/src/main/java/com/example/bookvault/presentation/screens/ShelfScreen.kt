@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.bookvault.R
 import com.example.bookvault.domain.model.SavedBook
 import com.example.bookvault.presentation.ui.theme.PlayfairDisplay
@@ -243,6 +244,7 @@ private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
     val height = (115 + seed % 50).dp
     val width = (24 + (seed / 13) % 18).dp
     val style = SpinePalette[seed % SpinePalette.size]
+    val hasCover = !book.coverUrl.isNullOrBlank()
 
     Box(
         modifier = Modifier
@@ -252,22 +254,43 @@ private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
             .background(style.main)
             .clickable(onClick = onClick)
     ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .height(10.dp)
-                .background(style.accent.copy(alpha = 0.9f))
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(14.dp)
-                .background(style.accent.copy(alpha = 0.9f))
-        )
+        if (hasCover) {
+            AsyncImage(
+                model = book.coverUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            // Dark gradient at bottom so title stays readable over any cover
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(height * 0.55f)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f))
+                        )
+                    )
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .background(style.accent.copy(alpha = 0.9f))
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(14.dp)
+                    .background(style.accent.copy(alpha = 0.9f))
+            )
+        }
 
-        // Left edge highlight (light source from upper-left)
+        // Light source from upper-left
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -275,7 +298,6 @@ private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
                 .width(1.5.dp)
                 .background(Color.White.copy(alpha = 0.18f))
         )
-        // Right edge shadow (suggests depth)
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -295,7 +317,7 @@ private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
                 modifier = Modifier
                     .vertical()
                     .rotate(-90f),
-                color = style.text,
+                color = if (hasCover) Color.White else style.text,
                 fontSize = 8.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
