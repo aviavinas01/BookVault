@@ -1,5 +1,7 @@
 package com.example.bookvault.presentation.screens
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,11 +36,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,7 +53,9 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.bookvault.R
 import com.example.bookvault.domain.model.SavedBook
+import com.example.bookvault.presentation.ui.theme.PlayfairDisplay
 import com.example.bookvault.presentation.viewmodel.BookViewModel
 import kotlin.math.abs
 
@@ -69,10 +78,25 @@ private val SpinePalette = listOf(
     SpineStyle(Color(0xFFE8B4B8), Color(0xFF800020), Color(0xFF2C2C2C)),
 )
 
+private val GenreArtwork = listOf(
+    R.drawable.genre_fiction,
+    R.drawable.genre_mystery,
+    R.drawable.genre_fantasy,
+    R.drawable.genre_classic,
+    R.drawable.genre_poetry,
+    R.drawable.genre_history,
+    R.drawable.genre_science,
+    R.drawable.genre_scifi,
+    R.drawable.genre_drama,
+)
+
 private val ShelfBg = Color(0xFFFAF6F0)
-private val ShelfBoard = Color(0xFFE8DECF)
-private val ShelfBoardShadow = Color(0x14000000)
+private val ShelfWood = Color(0xFFC9A87A)
+private val ShelfWoodGrain = Color(0xFF8D6940)
+private val ShelfWoodEdge = Color(0xFF6B4F35)
 private val InkBlack = Color(0xFF2C2C2C)
+private const val MinShelves = 4
+private const val BooksPerShelf = 8
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,7 +116,7 @@ fun ShelfScreen(
                 title = {
                     Text(
                         text = "My Bookshelf",
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = PlayfairDisplay,
                         fontWeight = FontWeight.Bold,
                         fontSize = 26.sp,
                         color = InkBlack
@@ -115,7 +139,7 @@ fun ShelfScreen(
                 .padding(padding),
             contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)
         ) {
-            val rows = uiState.savedBooks.chunked(8)
+            val rows = uiState.savedBooks.chunked(BooksPerShelf)
             val totalShelves = maxOf(MinShelves, rows.size)
             items(totalShelves) { index ->
                 ShelfRow(
@@ -127,8 +151,6 @@ fun ShelfScreen(
         }
     }
 }
-
-private const val MinShelves = 4
 
 @Composable
 private fun ShelfRow(
@@ -154,26 +176,64 @@ private fun ShelfRow(
                 when (rowIndex % 3) {
                     0 -> StackedBooks(seed = rowIndex)
                     1 -> PlantDecoration()
-                    else -> PictureFrame()
+                    else -> PictureFrame(rowIndex = rowIndex)
                 }
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-                .height(5.dp)
-                .background(ShelfBoard)
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-                .height(2.dp)
-                .background(ShelfBoardShadow)
-        )
+        WoodShelfBoard()
         Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun WoodShelfBoard(modifier: Modifier = Modifier) {
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(16.dp)
+    ) {
+        val shadowH = 3.dp.toPx()
+        // Soft contact shadow where books meet the shelf
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(Color(0x55000000), Color.Transparent),
+                startY = 0f,
+                endY = shadowH
+            ),
+            size = Size(size.width, shadowH)
+        )
+        // Wood plank
+        drawRect(
+            color = ShelfWood,
+            topLeft = Offset(0f, shadowH),
+            size = Size(size.width, size.height - shadowH)
+        )
+        // Top edge highlight (light from above)
+        drawLine(
+            color = Color.White.copy(alpha = 0.35f),
+            start = Offset(0f, shadowH + 0.5.dp.toPx()),
+            end = Offset(size.width, shadowH + 0.5.dp.toPx()),
+            strokeWidth = 1.dp.toPx()
+        )
+        // Grain lines
+        val grainColor = ShelfWoodGrain.copy(alpha = 0.25f)
+        listOf(0.35f, 0.55f, 0.78f).forEach { f ->
+            val y = shadowH + (size.height - shadowH) * f
+            drawLine(
+                color = grainColor,
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = 0.6.dp.toPx()
+            )
+        }
+        // Bottom dark edge (depth under shelf)
+        drawLine(
+            color = ShelfWoodEdge,
+            start = Offset(0f, size.height - 0.5.dp.toPx()),
+            end = Offset(size.width, size.height - 0.5.dp.toPx()),
+            strokeWidth = 1.5.dp.toPx()
+        )
     }
 }
 
@@ -207,6 +267,23 @@ private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
                 .background(style.accent.copy(alpha = 0.9f))
         )
 
+        // Left edge highlight (light source from upper-left)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .fillMaxHeight()
+                .width(1.5.dp)
+                .background(Color.White.copy(alpha = 0.18f))
+        )
+        // Right edge shadow (suggests depth)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .fillMaxHeight()
+                .width(2.dp)
+                .background(Color.Black.copy(alpha = 0.22f))
+        )
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -224,7 +301,7 @@ private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                fontFamily = FontFamily.Serif,
+                fontFamily = PlayfairDisplay,
                 letterSpacing = 1.sp
             )
         }
@@ -273,6 +350,14 @@ private fun StackedBooks(seed: Int) {
                         .width(6.dp)
                         .background(style.accent)
                 )
+                // Top highlight strip
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color.White.copy(alpha = 0.18f))
+                )
             }
             Spacer(Modifier.height(3.dp))
         }
@@ -284,23 +369,23 @@ private fun PlantDecoration() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom,
-        modifier = Modifier.height(135.dp)
+        modifier = Modifier.height(150.dp)
     ) {
         Box(
-            modifier = Modifier.size(width = 72.dp, height = 90.dp),
+            modifier = Modifier.size(width = 110.dp, height = 110.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
-            Frond(rotation = -55f, height = 65.dp, color = Color(0xFF4A6B3A))
-            Frond(rotation = -32f, height = 75.dp, color = Color(0xFF6B8E4E))
-            Frond(rotation = -10f, height = 82.dp, color = Color(0xFF4A6B3A))
-            Frond(rotation = 10f, height = 82.dp, color = Color(0xFF6B8E4E))
-            Frond(rotation = 32f, height = 75.dp, color = Color(0xFF4A6B3A))
-            Frond(rotation = 55f, height = 65.dp, color = Color(0xFF6B8E4E))
+            FernFrond(rotation = -60f, length = 78.dp, leafColor = Color(0xFF4A6B3A))
+            FernFrond(rotation = -35f, length = 88.dp, leafColor = Color(0xFF6B8E4E))
+            FernFrond(rotation = -12f, length = 95.dp, leafColor = Color(0xFF4A6B3A))
+            FernFrond(rotation = 12f, length = 95.dp, leafColor = Color(0xFF6B8E4E))
+            FernFrond(rotation = 35f, length = 88.dp, leafColor = Color(0xFF4A6B3A))
+            FernFrond(rotation = 60f, length = 78.dp, leafColor = Color(0xFF6B8E4E))
         }
         Box(
             modifier = Modifier
-                .size(width = 38.dp, height = 32.dp)
-                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 8.dp, bottomEnd = 8.dp))
+                .size(width = 42.dp, height = 34.dp)
+                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
                 .background(Color(0xFFF5F0E8))
         ) {
             Box(
@@ -310,52 +395,100 @@ private fun PlantDecoration() {
                     .height(5.dp)
                     .background(Color(0xFFE0D5C0))
             )
+            // Pot shadow on right side for roundness
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(5.dp)
+                    .background(Color(0x14000000))
+            )
         }
     }
 }
 
 @Composable
-private fun Frond(rotation: Float, height: Dp, color: Color) {
-    Box(
+private fun FernFrond(rotation: Float, length: Dp, leafColor: Color) {
+    val stemColor = Color(0xFF3D5A2C)
+    Canvas(
         modifier = Modifier
-            .width(12.dp)
-            .height(height)
+            .width(32.dp)
+            .height(length)
             .graphicsLayer {
                 rotationZ = rotation
                 transformOrigin = TransformOrigin(0.5f, 1f)
             }
-            .clip(RoundedCornerShape(topStartPercent = 50, topEndPercent = 50))
-            .background(color)
-    )
+    ) {
+        val cx = size.width / 2
+        // Central stem
+        drawLine(
+            color = stemColor,
+            start = Offset(cx, size.height),
+            end = Offset(cx, size.height * 0.06f),
+            strokeWidth = 1.5.dp.toPx(),
+            cap = StrokeCap.Round
+        )
+        // Compound leaflets along the stem
+        val leafletCount = 7
+        val maxLeaflet = size.width * 0.45f
+        for (i in 1..leafletCount) {
+            val t = i.toFloat() / (leafletCount + 1)
+            val y = size.height * (1f - t)
+            val len = maxLeaflet * (1f - t * 0.6f)
+            drawLine(
+                color = leafColor,
+                start = Offset(cx, y),
+                end = Offset(cx - len, y - len * 0.5f),
+                strokeWidth = 2.5.dp.toPx(),
+                cap = StrokeCap.Round
+            )
+            drawLine(
+                color = leafColor,
+                start = Offset(cx, y),
+                end = Offset(cx + len, y - len * 0.5f),
+                strokeWidth = 2.5.dp.toPx(),
+                cap = StrokeCap.Round
+            )
+        }
+    }
 }
 
 @Composable
-private fun PictureFrame() {
+private fun PictureFrame(rowIndex: Int) {
+    val artwork = GenreArtwork[rowIndex % GenreArtwork.size]
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom,
-        modifier = Modifier.height(90.dp)
+        modifier = Modifier.height(95.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(width = 60.dp, height = 72.dp)
+                .size(width = 64.dp, height = 78.dp)
                 .clip(RoundedCornerShape(3.dp))
-                .background(Color(0xFF8D6E63))
-                .padding(5.dp)
+                .background(Color(0xFF6B4F35))
+                .padding(4.dp)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF5F0E8)),
-                contentAlignment = Alignment.Center
+                    .clip(RoundedCornerShape(1.dp))
+                    .background(Color(0xFFF5F0E8))
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFFBCAAA4))
+                Image(
+                    painter = painterResource(artwork),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
+            // Inner shadow at top suggests glass depth
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .background(Color.Black.copy(alpha = 0.25f))
+            )
         }
     }
 }
