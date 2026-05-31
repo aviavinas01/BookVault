@@ -30,6 +30,7 @@ fun AddBookScreen(
     var description by remember { mutableStateOf("") }
     var pageCount   by remember { mutableStateOf("") }
     var excerpt     by remember { mutableStateOf("") }
+    var coverUrl    by remember { mutableStateOf("") }
 
     var titleError by remember { mutableStateOf(false) }
 
@@ -82,7 +83,8 @@ fun AddBookScreen(
                             description = description.trim(),
                             pageCount = pageCount.toIntOrNull() ?: 0,
                             excerpt = excerpt.trim(),
-                            publishDate = java.time.Instant.now().toString()
+                            publishDate = java.time.Instant.now().toString(),
+                            coverUrl = coverUrl.trim().takeIf { it.isNotBlank() }
                         )
                         viewModel.submitBook(book)
                     },
@@ -154,6 +156,15 @@ fun AddBookScreen(
                 label = "Excerpt",
                 placeholder = "A short excerpt or quote...",
                 minLines = 2
+            )
+
+            BookTextField(
+                value = coverUrl,
+                onValueChange = { coverUrl = it },
+                label = "Cover URL (optional)",
+                placeholder = "https://example.com/cover.jpg",
+                keyboardType = KeyboardType.Uri,
+                singleLine = true
             )
 
             Spacer(Modifier.height(8.dp))
