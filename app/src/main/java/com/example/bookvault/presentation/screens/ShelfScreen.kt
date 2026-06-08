@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.LocalFlorist
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
@@ -35,16 +36,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -329,79 +326,55 @@ private fun PlantDecoration() {
         modifier = Modifier.height(150.dp)
     ) {
         Box(
-            modifier = Modifier.size(width = 110.dp, height = 110.dp),
-            contentAlignment = Alignment.BottomCenter
+            modifier = Modifier
+                .size(width = 90.dp, height = 90.dp),
+            contentAlignment = Alignment.Center
         ) {
-            FernFrond(rotation = -60f, length = 78.dp, leafColor = Color(0xFF4A6B3A))
-            FernFrond(rotation = -35f, length = 88.dp, leafColor = Color(0xFF6B8E4E))
-            FernFrond(rotation = -12f, length = 95.dp, leafColor = Color(0xFF4A6B3A))
-            FernFrond(rotation = 12f, length = 95.dp, leafColor = Color(0xFF6B8E4E))
-            FernFrond(rotation = 35f, length = 88.dp, leafColor = Color(0xFF4A6B3A))
-            FernFrond(rotation = 60f, length = 78.dp, leafColor = Color(0xFF6B8E4E))
+            Icon(
+                imageVector = Icons.Outlined.LocalFlorist,
+                contentDescription = null,
+                tint = Color(0xFFE89BB0),
+                modifier = Modifier
+                    .size(48.dp)
+                    .align(Alignment.TopStart)
+            )
+            Icon(
+                imageVector = Icons.Outlined.LocalFlorist,
+                contentDescription = null,
+                tint = Color(0xFFE8A33D),
+                modifier = Modifier
+                    .size(42.dp)
+                    .align(Alignment.TopEnd)
+            )
+            Icon(
+                imageVector = Icons.Outlined.LocalFlorist,
+                contentDescription = null,
+                tint = Color(0xFF6B8E4E),
+                modifier = Modifier
+                    .size(50.dp)
+                    .align(Alignment.BottomCenter)
+            )
         }
+
         Box(
             modifier = Modifier
-                .size(width = 42.dp, height = 34.dp)
-                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
-                .background(Color(0xFFF5F0E8))
+                .size(width = 50.dp, height = 42.dp)
+                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 14.dp, bottomEnd = 14.dp))
+                .background(Color(0xFFE8DECF))
         ) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
-                    .height(5.dp)
-                    .background(Color(0xFFE0D5C0))
+                    .height(6.dp)
+                    .background(Color(0xFFD7CCC8))
             )
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .fillMaxHeight()
-                    .width(5.dp)
-                    .background(Color(0x14000000))
-            )
-        }
-    }
-}
-
-@Composable
-private fun FernFrond(rotation: Float, length: Dp, leafColor: Color) {
-    val stemColor = Color(0xFF3D5A2C)
-    Canvas(
-        modifier = Modifier
-            .width(32.dp)
-            .height(length)
-            .graphicsLayer {
-                rotationZ = rotation
-                transformOrigin = TransformOrigin(0.5f, 1f)
-            }
-    ) {
-        val cx = size.width / 2
-        drawLine(
-            color = stemColor,
-            start = Offset(cx, size.height),
-            end = Offset(cx, size.height * 0.06f),
-            strokeWidth = 1.5.dp.toPx(),
-            cap = StrokeCap.Round
-        )
-        val leafletCount = 7
-        val maxLeaflet = size.width * 0.45f
-        for (i in 1..leafletCount) {
-            val t = i.toFloat() / (leafletCount + 1)
-            val y = size.height * (1f - t)
-            val len = maxLeaflet * (1f - t * 0.6f)
-            drawLine(
-                color = leafColor,
-                start = Offset(cx, y),
-                end = Offset(cx - len, y - len * 0.5f),
-                strokeWidth = 2.5.dp.toPx(),
-                cap = StrokeCap.Round
-            )
-            drawLine(
-                color = leafColor,
-                start = Offset(cx, y),
-                end = Offset(cx + len, y - len * 0.5f),
-                strokeWidth = 2.5.dp.toPx(),
-                cap = StrokeCap.Round
+                    .width(6.dp)
+                    .background(Color(0x18000000))
             )
         }
     }
