@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -90,7 +91,22 @@ private val ShelfWoodGrain = Color(0xFF8D6940)
 private val ShelfWoodEdge = Color(0xFF6B4F35)
 private val InkBlack = Color(0xFF2C2C2C)
 private const val MinShelves = 4
-private const val BooksPerShelf = 8
+private val ShelfCapacities = listOf(6, 8, 5, 7, 4, 8, 6, 5)
+
+private fun distributeBooks(books: List<SavedBook>): List<List<SavedBook>> {
+    if (books.isEmpty()) return emptyList()
+    val result = mutableListOf<List<SavedBook>>()
+    var i = 0
+    var rowIndex = 0
+    while (i < books.size) {
+        val capacity = ShelfCapacities[rowIndex % ShelfCapacities.size]
+        val end = minOf(i + capacity, books.size)
+        result.add(books.subList(i, end))
+        i = end
+        rowIndex++
+    }
+    return result
+}
 
 @Composable
 fun ShelfScreen(
@@ -100,7 +116,7 @@ fun ShelfScreen(
     onAddClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val rows = uiState.savedBooks.chunked(BooksPerShelf)
+    val rows = remember(uiState.savedBooks) { distributeBooks(uiState.savedBooks) }
     val totalShelves = maxOf(MinShelves, rows.size)
 
     Column(
@@ -158,6 +174,13 @@ private fun ShelfRow(
     rowIndex: Int,
     onBookClick: (Int) -> Unit
 ) {
+    // Alternate shelves get 1-3 books lying flat (deterministic per rowIndex)
+    val lyingCount = if (rowIndex % 2 == 1 && books.size >= 3) {
+        minOf(books.size - 2, (rowIndex % 3) + 1)
+    } else 0
+    val standingBooks = books.dropLast(lyingCount)
+    val lyingBooks = books.takeLast(lyingCount)
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -167,8 +190,16 @@ private fun ShelfRow(
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.Bottom
         ) {
-            books.forEach { book ->
+            standingBooks.forEach { book ->
                 ShelfBookSpine(book = book, onClick = { onBookClick(book.id) })
+            }
+
+            if (lyingBooks.isNotEmpty()) {
+                Spacer(Modifier.width(6.dp))
+                LyingBookStack(
+                    books = lyingBooks,
+                    onBookClick = onBookClick
+                )
             }
 
             // Pattern repeats every 4 shelves: [none, plant, frame, none]
@@ -188,6 +219,63 @@ private fun ShelfRow(
 
         WoodShelfBoard()
         Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun LyingBookStack(
+    books: List<SavedBook>,
+    onBookClick: (Int) -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        books.forEach { book ->
+            LyingBook(book = book, onClick = { onBookClick(book.id) })
+        }
+    }
+}
+
+@Composable
+private fun LyingBook(book: SavedBook, onClick: () -> Unit) {
+    val seed = abs(book.id.hashCode() xor book.title.hashCode())
+    val width = (48 + seed % 22).dp
+    val height = (11 + seed % 4).dp
+    val style = SpinePalette[seed % SpinePalette.size]
+
+    Box(
+        modifier = Modifier
+            .width(width)
+            .height(height)
+            .clip(RoundedCornerShape(2.dp))
+            .background(style.main)
+            .clickable(onClick = onClick)
+    ) {
+        // Spine sliver on left (the book's spine peeking out)
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .fillMaxHeight()
+                .width(6.dp)
+                .background(style.accent)
+        )
+        // Top edge highlight (page tops)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(Color.White.copy(alpha = 0.2f))
+        )
+        // Bottom shadow under book
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(Color.Black.copy(alpha = 0.22f))
+        )
     }
 }
 
