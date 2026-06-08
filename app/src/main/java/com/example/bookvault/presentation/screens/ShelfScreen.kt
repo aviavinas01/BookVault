@@ -1,13 +1,11 @@
 package com.example.bookvault.presentation.screens
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -17,18 +15,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,7 +40,6 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,7 +48,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.bookvault.R
 import com.example.bookvault.domain.model.SavedBook
 import com.example.bookvault.presentation.ui.theme.PlayfairDisplay
 import com.example.bookvault.presentation.viewmodel.BookViewModel
@@ -79,18 +72,6 @@ private val SpinePalette = listOf(
     SpineStyle(Color(0xFFE8B4B8), Color(0xFF800020), Color(0xFF2C2C2C)),
 )
 
-private val GenreArtwork = listOf(
-    R.drawable.genre_fiction,
-    R.drawable.genre_mystery,
-    R.drawable.genre_fantasy,
-    R.drawable.genre_classic,
-    R.drawable.genre_poetry,
-    R.drawable.genre_history,
-    R.drawable.genre_science,
-    R.drawable.genre_scifi,
-    R.drawable.genre_drama,
-)
-
 private val ShelfBg = Color(0xFFFAF6F0)
 private val ShelfWood = Color(0xFFC9A87A)
 private val ShelfWoodGrain = Color(0xFF8D6940)
@@ -99,7 +80,6 @@ private val InkBlack = Color(0xFF2C2C2C)
 private const val MinShelves = 4
 private const val BooksPerShelf = 8
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShelfScreen(
     viewModel: BookViewModel,
@@ -108,44 +88,25 @@ fun ShelfScreen(
     onAddClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val rows = uiState.savedBooks.chunked(BooksPerShelf)
+    val totalShelves = maxOf(MinShelves, rows.size)
 
-    Scaffold(
-        containerColor = ShelfBg,
-        topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = ShelfBg),
-                title = {
-                    Text(
-                        text = "My Bookshelf",
-                        fontFamily = PlayfairDisplay,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 26.sp,
-                        color = InkBlack
-                    )
-                },
-                actions = {
-                    IconButton(onClick = onSearchClick) {
-                        Icon(Icons.Rounded.Search, contentDescription = "Search", tint = InkBlack)
-                    }
-                    IconButton(onClick = onAddClick) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Add book", tint = InkBlack)
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        LazyColumn(
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(ShelfBg)
+    ) {
+        ShelfHeader(onSearchClick = onSearchClick, onAddClick = onAddClick)
+
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
         ) {
-            val rows = uiState.savedBooks.chunked(BooksPerShelf)
-            val totalShelves = maxOf(MinShelves, rows.size)
-            items(totalShelves) { index ->
+            repeat(totalShelves) { index ->
                 ShelfRow(
                     books = rows.getOrNull(index) ?: emptyList(),
-                    rowIndex = index,
                     onBookClick = onBookClick
                 )
             }
@@ -154,9 +115,33 @@ fun ShelfScreen(
 }
 
 @Composable
+private fun ShelfHeader(onSearchClick: () -> Unit, onAddClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "My Bookshelf",
+            fontFamily = PlayfairDisplay,
+            fontWeight = FontWeight.Bold,
+            fontSize = 26.sp,
+            color = InkBlack
+        )
+        Spacer(Modifier.weight(1f))
+        IconButton(onClick = onSearchClick) {
+            Icon(Icons.Rounded.Search, contentDescription = "Search", tint = InkBlack)
+        }
+        IconButton(onClick = onAddClick) {
+            Icon(Icons.Rounded.Add, contentDescription = "Add book", tint = InkBlack)
+        }
+    }
+}
+
+@Composable
 private fun ShelfRow(
     books: List<SavedBook>,
-    rowIndex: Int,
     onBookClick: (Int) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -174,11 +159,7 @@ private fun ShelfRow(
 
             if (books.size < 7) {
                 Spacer(Modifier.weight(1f))
-                when (rowIndex % 3) {
-                    0 -> StackedBooks(seed = rowIndex)
-                    1 -> PlantDecoration()
-                    else -> PictureFrame(rowIndex = rowIndex)
-                }
+                PlantDecoration()
             }
         }
 
@@ -195,7 +176,6 @@ private fun WoodShelfBoard(modifier: Modifier = Modifier) {
             .height(16.dp)
     ) {
         val shadowH = 3.dp.toPx()
-        // Soft contact shadow where books meet the shelf
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(Color(0x55000000), Color.Transparent),
@@ -204,20 +184,17 @@ private fun WoodShelfBoard(modifier: Modifier = Modifier) {
             ),
             size = Size(size.width, shadowH)
         )
-        // Wood plank
         drawRect(
             color = ShelfWood,
             topLeft = Offset(0f, shadowH),
             size = Size(size.width, size.height - shadowH)
         )
-        // Top edge highlight (light from above)
         drawLine(
             color = Color.White.copy(alpha = 0.35f),
             start = Offset(0f, shadowH + 0.5.dp.toPx()),
             end = Offset(size.width, shadowH + 0.5.dp.toPx()),
             strokeWidth = 1.dp.toPx()
         )
-        // Grain lines
         val grainColor = ShelfWoodGrain.copy(alpha = 0.25f)
         listOf(0.35f, 0.55f, 0.78f).forEach { f ->
             val y = shadowH + (size.height - shadowH) * f
@@ -228,7 +205,6 @@ private fun WoodShelfBoard(modifier: Modifier = Modifier) {
                 strokeWidth = 0.6.dp.toPx()
             )
         }
-        // Bottom dark edge (depth under shelf)
         drawLine(
             color = ShelfWoodEdge,
             start = Offset(0f, size.height - 0.5.dp.toPx()),
@@ -261,7 +237,6 @@ private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-            // Dark gradient at bottom so title stays readable over any cover
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -290,7 +265,6 @@ private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
             )
         }
 
-        // Light source from upper-left
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -348,45 +322,6 @@ private fun Modifier.vertical() = this.layout { measurable, constraints ->
 }
 
 @Composable
-private fun StackedBooks(seed: Int) {
-    Column(
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.Bottom,
-        modifier = Modifier.height(70.dp)
-    ) {
-        repeat(3) { i ->
-            val s = abs((seed * 31 + i * 7).hashCode())
-            val style = SpinePalette[s % SpinePalette.size]
-            val w = (44 + s % 18).dp
-            Box(
-                modifier = Modifier
-                    .width(w)
-                    .height(14.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(style.main)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .fillMaxHeight()
-                        .width(6.dp)
-                        .background(style.accent)
-                )
-                // Top highlight strip
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Color.White.copy(alpha = 0.18f))
-                )
-            }
-            Spacer(Modifier.height(3.dp))
-        }
-    }
-}
-
-@Composable
 private fun PlantDecoration() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -417,7 +352,6 @@ private fun PlantDecoration() {
                     .height(5.dp)
                     .background(Color(0xFFE0D5C0))
             )
-            // Pot shadow on right side for roundness
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
@@ -442,7 +376,6 @@ private fun FernFrond(rotation: Float, length: Dp, leafColor: Color) {
             }
     ) {
         val cx = size.width / 2
-        // Central stem
         drawLine(
             color = stemColor,
             start = Offset(cx, size.height),
@@ -450,7 +383,6 @@ private fun FernFrond(rotation: Float, length: Dp, leafColor: Color) {
             strokeWidth = 1.5.dp.toPx(),
             cap = StrokeCap.Round
         )
-        // Compound leaflets along the stem
         val leafletCount = 7
         val maxLeaflet = size.width * 0.45f
         for (i in 1..leafletCount) {
@@ -470,46 +402,6 @@ private fun FernFrond(rotation: Float, length: Dp, leafColor: Color) {
                 end = Offset(cx + len, y - len * 0.5f),
                 strokeWidth = 2.5.dp.toPx(),
                 cap = StrokeCap.Round
-            )
-        }
-    }
-}
-
-@Composable
-private fun PictureFrame(rowIndex: Int) {
-    val artwork = GenreArtwork[rowIndex % GenreArtwork.size]
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Bottom,
-        modifier = Modifier.height(95.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(width = 64.dp, height = 78.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(Color(0xFF6B4F35))
-                .padding(4.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(1.dp))
-                    .background(Color(0xFFF5F0E8))
-            ) {
-                Image(
-                    painter = painterResource(artwork),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            // Inner shadow at top suggests glass depth
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .background(Color.Black.copy(alpha = 0.25f))
             )
         }
     }
