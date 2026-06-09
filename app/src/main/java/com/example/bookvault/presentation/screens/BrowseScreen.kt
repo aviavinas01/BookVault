@@ -285,7 +285,8 @@ private fun BrowseBookCard(
             BookCoverPlaceholder(
                 title = book.title,
                 size = 72.dp,
-                cornerRadius = 10.dp
+                cornerRadius = 10.dp,
+                coverUrl = book.coverUrl
             )
 
             Column(modifier = Modifier.weight(1f)) {

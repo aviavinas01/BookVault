@@ -15,6 +15,7 @@ data class OpenLibraryDoc(
     @SerialName("author_name") val authorName: List<String>? = null,
     @SerialName("first_publish_year") val firstPublishYear: Int? = null,
     @SerialName("cover_i") val coverI: Int? = null,
+    @SerialName("cover_edition_key") val coverEditionKey: String? = null,
     @SerialName("number_of_pages_median") val numberOfPagesMedian: Int? = null,
     @SerialName("first_sentence") val firstSentence: List<String>? = null,
     val subject: List<String>? = null
@@ -35,6 +36,20 @@ fun OpenLibraryDoc.toBookDtoOrNull(): BookDto? {
         }
     }
 
+    // Guaranteed non-null cover URL via a 3-tier fallback chain.
+    // - cover_i: most reliable, points to an existing cover
+    // - cover_edition_key: OL sometimes provides this when cover_i is absent
+    // - work OLID: last-resort guess; ?default=false returns 404 instead of
+    //   OL's ugly placeholder so Coil falls through to our procedural initials.
+    val coverUrl = when {
+        coverI != null ->
+            "https://covers.openlibrary.org/b/id/$coverI-L.jpg"
+        coverEditionKey != null ->
+            "https://covers.openlibrary.org/b/olid/$coverEditionKey-L.jpg"
+        else ->
+            "https://covers.openlibrary.org/b/olid/OL${numericId}W-L.jpg?default=false"
+    }
+
     return BookDto(
         id = numericId,
         title = title,
@@ -42,6 +57,6 @@ fun OpenLibraryDoc.toBookDtoOrNull(): BookDto? {
         pageCount = numberOfPagesMedian ?: 0,
         excerpt = firstSentence?.firstOrNull().orEmpty(),
         publishDate = firstPublishYear?.toString(),
-        coverUrl = coverI?.let { "https://covers.openlibrary.org/b/id/$it-L.jpg" }
+        coverUrl = coverUrl
     )
 }

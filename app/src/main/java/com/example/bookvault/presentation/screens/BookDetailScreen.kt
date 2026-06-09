@@ -117,7 +117,8 @@ fun BookDetailScreen(
                                 BookCoverPlaceholder(
                                     title = book.title,
                                     size = 150.dp,
-                                    cornerRadius = 16.dp
+                                    cornerRadius = 16.dp,
+                                    coverUrl = book.coverUrl
                                 )
                             }
                             Spacer(Modifier.height(24.dp))

@@ -15,8 +15,9 @@ class BookRepositoryImpl(
 
     override suspend fun getBooks(query: String?): Result<List<Book>> {
         return try {
-            val effective = query?.takeIf { it.isNotBlank() } ?: "bestseller"
-            val books = api.getAllBooks(query = effective).map { it.toDomain() }
+            // null/blank query → API defaults to popular-by-editions; otherwise pass through.
+            val books = api.getAllBooks(query = query?.takeIf { it.isNotBlank() })
+                .map { it.toDomain() }
             dao.insertBooks(books.map { it.toEntity() })
             Result.success(books)
         } catch (e: Exception) {

@@ -284,7 +284,8 @@ private fun ProfileBookCard(
             BookCoverPlaceholder(
                 title = book.title,
                 size = 64.dp,
-                cornerRadius = 10.dp
+                cornerRadius = 10.dp,
+                coverUrl = book.coverUrl
             )
 
             Column(modifier = Modifier.weight(1f)) {

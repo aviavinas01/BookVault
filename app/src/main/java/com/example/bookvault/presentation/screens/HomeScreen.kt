@@ -491,7 +491,7 @@ private fun FeaturedBookCard(
                     .align(Alignment.CenterEnd)
                     .padding(end = 20.dp)
             ) {
-                BookCoverPlaceholder(title = book.title, size = 130.dp, cornerRadius = 14.dp)
+                BookCoverPlaceholder(title = book.title, size = 130.dp, cornerRadius = 14.dp, coverUrl = book.coverUrl)
             }
             Box(
                 modifier = Modifier
@@ -587,7 +587,7 @@ private fun SuggestedBookCard(
         shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        BookCoverPlaceholder(title = book.title, size = 155.dp, cornerRadius = 14.dp)
+        BookCoverPlaceholder(title = book.title, size = 155.dp, cornerRadius = 14.dp, coverUrl = book.coverUrl)
     }
 }
 
@@ -691,7 +691,7 @@ private fun SavedBookCard(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BookCoverPlaceholder(title = book.title, size = 70.dp, cornerRadius = 10.dp)
+            BookCoverPlaceholder(title = book.title, size = 70.dp, cornerRadius = 10.dp, coverUrl = book.coverUrl)
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
