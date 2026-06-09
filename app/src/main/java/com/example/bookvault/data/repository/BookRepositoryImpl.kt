@@ -4,6 +4,7 @@ import com.example.bookvault.data.local.BookDao
 import com.example.bookvault.data.local.toDomain
 import com.example.bookvault.data.local.toEntity
 import com.example.bookvault.data.remote.BookApiService
+import com.example.bookvault.data.remote.toDomain
 import com.example.bookvault.domain.model.Book
 import com.example.bookvault.domain.repository.BookRepository
 
