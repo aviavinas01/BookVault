@@ -1,7 +1,6 @@
 package com.example.bookvault.presentation.screens
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +39,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,7 +46,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.bookvault.R
 import com.example.bookvault.domain.model.SavedBook
 import com.example.bookvault.presentation.ui.theme.PlayfairDisplay
 import com.example.bookvault.presentation.viewmodel.BookViewModel
@@ -73,40 +70,15 @@ private val SpinePalette = listOf(
     SpineStyle(Color(0xFFE8B4B8), Color(0xFF800020), Color(0xFF2C2C2C)),
 )
 
-private val GenreArtwork = listOf(
-    R.drawable.genre_fiction,
-    R.drawable.genre_mystery,
-    R.drawable.genre_fantasy,
-    R.drawable.genre_classic,
-    R.drawable.genre_poetry,
-    R.drawable.genre_history,
-    R.drawable.genre_science,
-    R.drawable.genre_scifi,
-    R.drawable.genre_drama,
-)
-
 private val ShelfBg = Color(0xFFFAF6F0)
+private val CaveBg = Color(0xFFE6D9C2)
+private val CaveDarkInner = Color(0xFFB89A75)
 private val ShelfWood = Color(0xFFC9A87A)
 private val ShelfWoodGrain = Color(0xFF8D6940)
 private val ShelfWoodEdge = Color(0xFF6B4F35)
 private val InkBlack = Color(0xFF2C2C2C)
 private const val MinShelves = 4
-private val ShelfCapacities = listOf(6, 8, 5, 7, 4, 8, 6, 5)
-
-private fun distributeBooks(books: List<SavedBook>): List<List<SavedBook>> {
-    if (books.isEmpty()) return emptyList()
-    val result = mutableListOf<List<SavedBook>>()
-    var i = 0
-    var rowIndex = 0
-    while (i < books.size) {
-        val capacity = ShelfCapacities[rowIndex % ShelfCapacities.size]
-        val end = minOf(i + capacity, books.size)
-        result.add(books.subList(i, end))
-        i = end
-        rowIndex++
-    }
-    return result
-}
+private const val BooksPerShelf = 9
 
 @Composable
 fun ShelfScreen(
@@ -116,7 +88,7 @@ fun ShelfScreen(
     onAddClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val rows = remember(uiState.savedBooks) { distributeBooks(uiState.savedBooks) }
+    val rows = remember(uiState.savedBooks) { uiState.savedBooks.chunked(BooksPerShelf) }
     val totalShelves = maxOf(MinShelves, rows.size)
 
     Column(
@@ -174,107 +146,107 @@ private fun ShelfRow(
     rowIndex: Int,
     onBookClick: (Int) -> Unit
 ) {
-    // Alternate shelves get 1-3 books lying flat (deterministic per rowIndex)
-    val lyingCount = if (rowIndex % 2 == 1 && books.size >= 3) {
-        minOf(books.size - 2, (rowIndex % 3) + 1)
-    } else 0
-    val standingBooks = books.dropLast(lyingCount)
-    val lyingBooks = books.takeLast(lyingCount)
+    val standingBooks = books.take(5)
+    val horizontalBooks = books.drop(5).take(4)
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            standingBooks.forEach { book ->
-                ShelfBookSpine(book = book, onClick = { onBookClick(book.id) })
-            }
-
-            if (lyingBooks.isNotEmpty()) {
-                Spacer(Modifier.width(6.dp))
-                LyingBookStack(
-                    books = lyingBooks,
-                    onBookClick = onBookClick
-                )
-            }
-
-            // Pattern repeats every 4 shelves: [none, plant, frame, none]
-            if (books.size < 7) {
-                when (rowIndex % 4) {
-                    1 -> {
-                        Spacer(Modifier.weight(1f))
-                        PlantDecoration()
+        CaveAlcove {
+            // Pattern repeats every 3 shelves
+            // 0 → empty-left, books-right
+            // 1 → books-left, vase-right
+            // 2 → frame-left, books-right
+            when (rowIndex % 3) {
+                0 -> {
+                    Spacer(Modifier.weight(1f))
+                    if (horizontalBooks.isNotEmpty()) {
+                        HorizontalBookStack(books = horizontalBooks, onBookClick = onBookClick)
+                        Spacer(Modifier.width(4.dp))
                     }
-                    2 -> {
-                        Spacer(Modifier.weight(1f))
-                        PictureFrame(rowIndex = rowIndex)
+                    standingBooks.forEach { book ->
+                        ShelfBookSpine(book = book, onClick = { onBookClick(book.id) })
+                    }
+                }
+                1 -> {
+                    standingBooks.forEach { book ->
+                        ShelfBookSpine(book = book, onClick = { onBookClick(book.id) })
+                    }
+                    if (horizontalBooks.isNotEmpty()) {
+                        Spacer(Modifier.width(4.dp))
+                        HorizontalBookStack(books = horizontalBooks, onBookClick = onBookClick)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    PlantDecoration()
+                }
+                else -> {
+                    EmptyPictureFrame()
+                    Spacer(Modifier.weight(1f))
+                    if (horizontalBooks.isNotEmpty()) {
+                        HorizontalBookStack(books = horizontalBooks, onBookClick = onBookClick)
+                        Spacer(Modifier.width(4.dp))
+                    }
+                    standingBooks.forEach { book ->
+                        ShelfBookSpine(book = book, onClick = { onBookClick(book.id) })
                     }
                 }
             }
         }
-
         WoodShelfBoard()
         Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
 @Composable
-private fun LyingBookStack(
-    books: List<SavedBook>,
-    onBookClick: (Int) -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        books.forEach { book ->
-            LyingBook(book = book, onClick = { onBookClick(book.id) })
-        }
-    }
-}
-
-@Composable
-private fun LyingBook(book: SavedBook, onClick: () -> Unit) {
-    val seed = abs(book.id.hashCode() xor book.title.hashCode())
-    val width = (48 + seed % 22).dp
-    val height = (11 + seed % 4).dp
-    val style = SpinePalette[seed % SpinePalette.size]
-
+private fun CaveAlcove(content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
     Box(
         modifier = Modifier
-            .width(width)
-            .height(height)
-            .clip(RoundedCornerShape(2.dp))
-            .background(style.main)
-            .clickable(onClick = onClick)
+            .fillMaxWidth()
+            .height(180.dp)
+            .background(CaveBg)
     ) {
-        // Spine sliver on left (the book's spine peeking out)
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .fillMaxHeight()
-                .width(6.dp)
-                .background(style.accent)
-        )
-        // Top edge highlight (page tops)
+        // Top overhang shadow — cave lip casts darkness on back wall
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(1.dp)
-                .background(Color.White.copy(alpha = 0.2f))
+                .height(22.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color(0x38000000), Color.Transparent)
+                    )
+                )
         )
-        // Bottom shadow under book
+        // Left side wall — receding shadow
         Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(Color.Black.copy(alpha = 0.22f))
+                .align(Alignment.CenterStart)
+                .fillMaxHeight()
+                .width(12.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(CaveDarkInner.copy(alpha = 0.55f), Color.Transparent)
+                    )
+                )
+        )
+        // Right side wall
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .width(12.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(Color.Transparent, CaveDarkInner.copy(alpha = 0.55f))
+                    )
+                )
+        )
+        // Books / decorations inside the alcove
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.Bottom,
+            content = content
         )
     }
 }
@@ -328,8 +300,8 @@ private fun WoodShelfBoard(modifier: Modifier = Modifier) {
 @Composable
 private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
     val seed = abs(book.id.hashCode() xor book.title.hashCode())
-    val height = (115 + seed % 50).dp
-    val width = (24 + (seed / 13) % 18).dp
+    val height = (118 + seed % 38).dp
+    val width = (22 + (seed / 13) % 12).dp
     val style = SpinePalette[seed % SpinePalette.size]
     val hasCover = !book.coverUrl.isNullOrBlank()
 
@@ -433,6 +405,92 @@ private fun Modifier.vertical() = this.layout { measurable, constraints ->
 }
 
 @Composable
+private fun HorizontalBookStack(
+    books: List<SavedBook>,
+    onBookClick: (Int) -> Unit
+) {
+    // Each horizontal book = same spine dimensions, rotated 90°.
+    // Stack of 4 forms a vertical pile bottom-aligned with standing books.
+    Column(
+        verticalArrangement = Arrangement.spacedBy(1.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        books.forEach { book ->
+            HorizontalBookSpine(book = book, onClick = { onBookClick(book.id) })
+        }
+    }
+}
+
+@Composable
+private fun HorizontalBookSpine(book: SavedBook, onClick: () -> Unit) {
+    val seed = abs(book.id.hashCode() xor book.title.hashCode())
+    // Dimensions are the standing spine, transposed — same data, rotated 90°
+    val width = (118 + seed % 38).dp
+    val height = (22 + (seed / 13) % 12).dp
+    val style = SpinePalette[seed % SpinePalette.size]
+
+    Box(
+        modifier = Modifier
+            .width(width)
+            .height(height)
+            .clip(RoundedCornerShape(2.dp))
+            .background(style.main)
+            .clickable(onClick = onClick)
+    ) {
+        // Spine bands now on left & right (since the book is "lying" rotated)
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .fillMaxHeight()
+                .width(14.dp)
+                .background(style.accent.copy(alpha = 0.9f))
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .width(10.dp)
+                .background(style.accent.copy(alpha = 0.9f))
+        )
+        // Light hits the top edge of the lying book
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(1.5.dp)
+                .background(Color.White.copy(alpha = 0.2f))
+        )
+        // Bottom shadow under the book
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(Color.Black.copy(alpha = 0.22f))
+        )
+        // Title reads horizontally
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 20.dp, end = 14.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = book.title.uppercase(),
+                color = style.text,
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                fontFamily = PlayfairDisplay,
+                letterSpacing = 1.sp
+            )
+        }
+    }
+}
+
+@Composable
 private fun PlantDecoration() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -471,17 +529,16 @@ private fun PlantDecoration() {
 }
 
 @Composable
-private fun PictureFrame(rowIndex: Int) {
-    val artwork = GenreArtwork[rowIndex % GenreArtwork.size]
+private fun EmptyPictureFrame() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom,
         modifier = Modifier.height(110.dp)
     ) {
         Box(
-            modifier = Modifier.size(width = 76.dp, height = 92.dp)
+            modifier = Modifier.size(width = 70.dp, height = 88.dp)
         ) {
-            // Layered wood frame: dark edge -> medium body -> cream matting -> artwork
+            // Layered wood frame: dark edge → wood body → cream matting (empty)
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -491,25 +548,17 @@ private fun PictureFrame(rowIndex: Int) {
                     .background(Color(0xFF8D6E63))
                     .padding(5.dp)
                     .background(Color(0xFFF5F0E8))
-                    .padding(3.dp)
-            ) {
-                Image(
-                    painter = painterResource(artwork),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            // Glass shine across top
+            )
+            // Glass shine
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 9.dp)
-                    .fillMaxWidth(0.65f)
+                    .fillMaxWidth(0.6f)
                     .height(1.5.dp)
                     .background(Color.White.copy(alpha = 0.45f))
             )
-            // Inner shadow under top frame edge (depth)
+            // Inner top shadow for frame depth
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)

@@ -3,25 +3,20 @@ package com.example.bookvault.data.remote
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
-import io.ktor.http.*
 
 class BookApiService(private val client: HttpClient) {
 
-    private val baseUrl = "https://fakerestapi.azurewebsites.net/api/v1/Books"
+    private val baseUrl = "https://openlibrary.org"
 
-    suspend fun getAllBooks(): List<BookDto> =
-        client.get(baseUrl).body()
-
-    suspend fun getBookById(id: Int): BookDto =
-        client.get("$baseUrl/$id").body()
-
-    suspend fun addBook(book: BookDto): BookDto =
-        client.post(baseUrl) {
-            contentType(ContentType.Application.Json)
-            setBody(book)
+    suspend fun getAllBooks(query: String = "bestseller", limit: Int = 40): List<BookDto> {
+        val response: OpenLibrarySearchResponse = client.get("$baseUrl/search.json") {
+            parameter("q", query)
+            parameter("limit", limit)
+            parameter(
+                "fields",
+                "key,title,author_name,first_publish_year,cover_i,number_of_pages_median,first_sentence,subject"
+            )
         }.body()
-
-    suspend fun deleteBook(id: Int) {
-        client.delete("$baseUrl/$id")
+        return response.docs.mapNotNull { it.toBookDtoOrNull() }
     }
 }

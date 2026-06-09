@@ -4,8 +4,6 @@ import com.example.bookvault.data.local.BookDao
 import com.example.bookvault.data.local.toDomain
 import com.example.bookvault.data.local.toEntity
 import com.example.bookvault.data.remote.BookApiService
-import com.example.bookvault.data.remote.toDomain
-import com.example.bookvault.data.remote.toDto
 import com.example.bookvault.domain.model.Book
 import com.example.bookvault.domain.repository.BookRepository
 
@@ -27,20 +25,21 @@ class BookRepositoryImpl(
     }
 
     override suspend fun getBookById(id: Int): Result<Book> {
-        return try {
-            Result.success(api.getBookById(id).toDomain())
-        } catch (e: Exception) {
-            val cached = dao.getBookById(id)?.toDomain()
-            if (cached != null) Result.success(cached)
-            else Result.failure(e)
-        }
+        val cached = dao.getBookById(id)?.toDomain()
+        return if (cached != null) Result.success(cached)
+        else Result.failure(NoSuchElementException("Book $id not in cache"))
     }
 
     override suspend fun addBook(book: Book): Result<Book> {
         return try {
-            val result = api.addBook(book.toDto()).toDomain()
-            dao.insertBook(result.toEntity())
-            Result.success(result)
+            // Open Library is read-only — user-added books are kept locally only.
+            // Negative IDs avoid collisions with Open Library's positive IDs.
+            val newId = if (book.id == 0) {
+                -(System.currentTimeMillis() and 0x7FFFFFFF).toInt()
+            } else book.id
+            val newBook = book.copy(id = newId)
+            dao.insertBook(newBook.toEntity())
+            Result.success(newBook)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -48,7 +47,6 @@ class BookRepositoryImpl(
 
     override suspend fun deleteBook(id: Int): Result<Unit> {
         return try {
-            api.deleteBook(id)
             dao.deleteBook(id)
             Result.success(Unit)
         } catch (e: Exception) {
