@@ -59,10 +59,10 @@ class BookViewModel(
         }.launchIn(viewModelScope)
     }
 
-    fun fetchBooks() {
+    fun fetchBooks(query: String? = null) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            getBooks().fold(
+            getBooks(query).fold(
                 onSuccess = { books ->
                     _uiState.update { it.copy(books = books, isLoading = false) }
                 },

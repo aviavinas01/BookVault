@@ -12,9 +12,10 @@ class BookRepositoryImpl(
     private val dao: BookDao
 ) : BookRepository {
 
-    override suspend fun getBooks(): Result<List<Book>> {
+    override suspend fun getBooks(query: String?): Result<List<Book>> {
         return try {
-            val books = api.getAllBooks().map { it.toDomain() }
+            val effective = query?.takeIf { it.isNotBlank() } ?: "bestseller"
+            val books = api.getAllBooks(query = effective).map { it.toDomain() }
             dao.insertBooks(books.map { it.toEntity() })
             Result.success(books)
         } catch (e: Exception) {
