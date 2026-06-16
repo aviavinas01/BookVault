@@ -270,72 +270,136 @@ private fun BrowseBookCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
-        border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-        ),
-        elevation = CardDefaults.cardElevation(0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Generated book cover
-            BookCoverPlaceholder(
-                title = book.title,
-                size = 72.dp,
-                cornerRadius = 10.dp,
-                coverUrl = book.coverUrl
-            )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ThreeDBookCover(book = book, height = 78.dp)
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = book.title.ifBlank { "Untitled" },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = book.description.ifBlank { "No description available" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(6.dp))
-                if (book.pageCount > 0) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "${book.pageCount} pages",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = book.title.uppercase().ifBlank { "UNTITLED" },
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        letterSpacing = 0.5.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = 18.sp
                     )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        text = extractAuthor(book.description),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    RatingDots(seed = book.id)
                 }
+
+                Icon(
+                    imageVector = Icons.Rounded.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                    modifier = Modifier.size(20.dp)
+                )
             }
 
-            // Save / saved bookmark icon
+            // Subtle save-toggle at top-right corner — preserves quick-save UX
+            // without disrupting the reference layout.
             IconButton(
                 onClick = onSaveToggle,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(34.dp)
             ) {
                 Icon(
                     imageVector = if (isSaved) Icons.Rounded.Bookmark
                     else Icons.Rounded.BookmarkBorder,
                     contentDescription = if (isSaved) "Remove from list" else "Save to list",
                     tint = if (isSaved) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
+                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ThreeDBookCover(book: Book, height: Dp = 78.dp) {
+    val width = height * 0.7f
+    val shadowOffset = 3.dp
+    Box(
+        modifier = Modifier
+            .width(width + shadowOffset)
+            .height(height + shadowOffset)
+    ) {
+        // Offset shadow — gives the cover a "lifted" 3D feel.
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .width(width)
+                .height(height)
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color.Black.copy(alpha = 0.20f))
+        )
+        // The actual cover sits on top, offset to upper-left of the shadow.
+        Box(modifier = Modifier.align(Alignment.TopStart)) {
+            BookCoverPlaceholder(
+                title = book.title,
+                size = height,
+                cornerRadius = 4.dp,
+                coverUrl = book.coverUrl
+            )
+            // Thin dark stripe on the right edge of the cover suggests page depth.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .width(1.5.dp)
+                    .height(height - 4.dp)
+                    .background(Color.Black.copy(alpha = 0.18f))
+            )
+        }
+    }
+}
+
+@Composable
+private fun RatingDots(seed: Int) {
+    val filledCount = (abs(seed.hashCode()) % 5) + 1
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        repeat(5) { i ->
+            Box(
+                modifier = Modifier
+                    .size(5.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (i < filledCount) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
+                    )
+            )
+        }
+    }
+}
+
+private fun extractAuthor(description: String): String {
+    val first = description.substringBefore("\n").trim()
+    return when {
+        first.startsWith("By ", ignoreCase = true) ->
+            first.substring(3).trim().ifBlank { "Unknown author" }
+        first.isNotEmpty() -> first
+        else -> "Unknown author"
     }
 }
