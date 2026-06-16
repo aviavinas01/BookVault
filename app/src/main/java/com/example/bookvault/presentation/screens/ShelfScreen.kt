@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,7 +20,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.LocalFlorist
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
@@ -33,10 +33,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
@@ -49,8 +52,15 @@ import coil.compose.AsyncImage
 import com.example.bookvault.domain.model.SavedBook
 import com.example.bookvault.presentation.ui.theme.PlayfairDisplay
 import com.example.bookvault.presentation.viewmodel.BookViewModel
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
+/* ----------------------------------------------------------------------------
+ * Spine colour styles. A spine carries a main body colour, an accent used for
+ * decorative head/tail bands, and the colour the title prints in.
+ * ------------------------------------------------------------------------- */
 private data class SpineStyle(val main: Color, val accent: Color, val text: Color)
 
 private val SpinePalette = listOf(
@@ -70,13 +80,21 @@ private val SpinePalette = listOf(
     SpineStyle(Color(0xFFE8B4B8), Color(0xFF800020), Color(0xFF2C2C2C)),
 )
 
-private val ShelfBg = Color(0xFFFAF6F0)
-private val CaveBg = Color(0xFFE6D9C2)
-private val CaveDarkInner = Color(0xFFB89A75)
-private val ShelfWood = Color(0xFFC9A87A)
-private val ShelfWoodGrain = Color(0xFF8D6940)
-private val ShelfWoodEdge = Color(0xFF6B4F35)
+/* Bright, airy palette — matches the white floating-shelf reference. */
+private val ShelfBg = Color(0xFFFDFBF7)          // page background
+private val WallBg = Color(0xFFFBF8F2)            // back wall inside the alcove
+private val WallShadeTop = Color(0x14000000)      // soft shadow the upper shelf casts
+private val WallShadeSide = Color(0x0F000000)     // faint side ambient occlusion
+private val ContactShadow = Color(0x33000000)     // where books meet the board
+
+private val BoardTop = Color(0xFFF3ECDF)          // lit top face of the shelf
+private val BoardFace = Color(0xFFE7DCC8)         // front edge of the board
+private val BoardUnder = Color(0xFFC9BBA3)        // underside line
+private val BoardHighlight = Color(0xCCFFFFFF)    // top catch-light
+
+private val PageCream = Color(0xFFF3EAD8)         // visible page block on lying books
 private val InkBlack = Color(0xFF2C2C2C)
+
 private const val MinShelves = 4
 private const val BooksPerShelf = 9
 
@@ -111,6 +129,7 @@ fun ShelfScreen(
                     onBookClick = onBookClick
                 )
             }
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
@@ -120,7 +139,7 @@ private fun ShelfHeader(onSearchClick: () -> Unit, onAddClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+            .padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -150,18 +169,21 @@ private fun ShelfRow(
     val horizontalBooks = books.drop(5).take(4)
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        CaveAlcove {
-            // Pattern repeats every 3 shelves
-            // 0 → empty-left, books-right
-            // 1 → books-left, vase-right
-            // 2 → frame-left, books-right
+        ShelfAlcove {
+            // Decoration pattern repeats every 3 shelves. Book ORDER is preserved
+            // exactly as defined here; only the visuals around them changed.
+            // 0 -> empty-left, stack, bookend, standing-right
+            // 1 -> standing-left, stack, plant-right
+            // 2 -> frame-left, stack, standing-right
             when (rowIndex % 3) {
                 0 -> {
                     Spacer(Modifier.weight(1f))
                     if (horizontalBooks.isNotEmpty()) {
                         HorizontalBookStack(books = horizontalBooks, onBookClick = onBookClick)
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(6.dp))
                     }
+                    MarbleBookend()
+                    Spacer(Modifier.width(2.dp))
                     standingBooks.forEach { book ->
                         ShelfBookSpine(book = book, onClick = { onBookClick(book.id) })
                     }
@@ -171,18 +193,18 @@ private fun ShelfRow(
                         ShelfBookSpine(book = book, onClick = { onBookClick(book.id) })
                     }
                     if (horizontalBooks.isNotEmpty()) {
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(6.dp))
                         HorizontalBookStack(books = horizontalBooks, onBookClick = onBookClick)
                     }
                     Spacer(Modifier.weight(1f))
-                    PlantDecoration()
+                    PottedPlant()
                 }
                 else -> {
                     EmptyPictureFrame()
                     Spacer(Modifier.weight(1f))
                     if (horizontalBooks.isNotEmpty()) {
                         HorizontalBookStack(books = horizontalBooks, onBookClick = onBookClick)
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(6.dp))
                     }
                     standingBooks.forEach { book ->
                         ShelfBookSpine(book = book, onClick = { onBookClick(book.id) })
@@ -190,60 +212,58 @@ private fun ShelfRow(
                 }
             }
         }
-        WoodShelfBoard()
-        Spacer(modifier = Modifier.height(8.dp))
+        ShelfBoard()
+        Spacer(modifier = Modifier.height(6.dp))
     }
 }
 
+/* ----------------------------------------------------------------------------
+ * The recessed wall the books sit against. Bright and clean like the reference,
+ * with soft directional shadows that give the niche real depth.
+ * ------------------------------------------------------------------------- */
 @Composable
-private fun CaveAlcove(content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
+private fun ShelfAlcove(content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
-            .background(CaveBg)
+            .height(196.dp)
+            .background(WallBg)
     ) {
-        // Top overhang shadow — cave lip casts darkness on back wall
+        // Shadow the shelf above casts onto the back wall
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(22.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color(0x38000000), Color.Transparent)
-                    )
-                )
+                .height(26.dp)
+                .background(Brush.verticalGradient(listOf(WallShadeTop, Color.Transparent)))
         )
-        // Left side wall — receding shadow
+        // Gentle side ambient occlusion
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .fillMaxHeight()
-                .width(12.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(CaveDarkInner.copy(alpha = 0.55f), Color.Transparent)
-                    )
-                )
+                .width(16.dp)
+                .background(Brush.horizontalGradient(listOf(WallShadeSide, Color.Transparent)))
         )
-        // Right side wall
         Box(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .fillMaxHeight()
-                .width(12.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(Color.Transparent, CaveDarkInner.copy(alpha = 0.55f))
-                    )
-                )
+                .width(16.dp)
+                .background(Brush.horizontalGradient(listOf(Color.Transparent, WallShadeSide)))
         )
-        // Books / decorations inside the alcove
+        // Contact shadow strip — grounds whatever stands on the board
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(20.dp)
+                .background(Brush.verticalGradient(listOf(Color.Transparent, ContactShadow)))
+        )
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 10.dp),
+                .padding(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.Bottom,
             content = content
@@ -251,65 +271,72 @@ private fun CaveAlcove(content: @Composable androidx.compose.foundation.layout.R
     }
 }
 
+/* ----------------------------------------------------------------------------
+ * A clean white floating shelf: a thin lit board, a darker front edge, and a
+ * soft cast shadow underneath — the shadow is what makes it read as floating.
+ * ------------------------------------------------------------------------- */
 @Composable
-private fun WoodShelfBoard(modifier: Modifier = Modifier) {
+private fun ShelfBoard(modifier: Modifier = Modifier) {
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(16.dp)
+            .height(22.dp)
     ) {
-        val shadowH = 3.dp.toPx()
+        val boardH = 13.dp.toPx()
+
+        // Top lit face of the board
         drawRect(
             brush = Brush.verticalGradient(
-                colors = listOf(Color(0x55000000), Color.Transparent),
+                colors = listOf(BoardTop, BoardFace),
                 startY = 0f,
-                endY = shadowH
+                endY = boardH
             ),
-            size = Size(size.width, shadowH)
+            size = Size(size.width, boardH)
         )
+        // Catch-light along the very top edge
         drawRect(
-            color = ShelfWood,
-            topLeft = Offset(0f, shadowH),
-            size = Size(size.width, size.height - shadowH)
+            color = BoardHighlight,
+            topLeft = Offset(0f, 0f),
+            size = Size(size.width, 1.2.dp.toPx())
         )
-        drawLine(
-            color = Color.White.copy(alpha = 0.35f),
-            start = Offset(0f, shadowH + 0.5.dp.toPx()),
-            end = Offset(size.width, shadowH + 0.5.dp.toPx()),
-            strokeWidth = 1.dp.toPx()
+        // Underside line — the board has thickness
+        drawRect(
+            color = BoardUnder,
+            topLeft = Offset(0f, boardH - 1.4.dp.toPx()),
+            size = Size(size.width, 1.4.dp.toPx())
         )
-        val grainColor = ShelfWoodGrain.copy(alpha = 0.25f)
-        listOf(0.35f, 0.55f, 0.78f).forEach { f ->
-            val y = shadowH + (size.height - shadowH) * f
-            drawLine(
-                color = grainColor,
-                start = Offset(0f, y),
-                end = Offset(size.width, y),
-                strokeWidth = 0.6.dp.toPx()
-            )
-        }
-        drawLine(
-            color = ShelfWoodEdge,
-            start = Offset(0f, size.height - 0.5.dp.toPx()),
-            end = Offset(size.width, size.height - 0.5.dp.toPx()),
-            strokeWidth = 1.5.dp.toPx()
+        // Soft shadow the shelf casts on the wall below it (floating effect)
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(Color(0x26000000), Color.Transparent),
+                startY = boardH,
+                endY = size.height
+            ),
+            topLeft = Offset(0f, boardH),
+            size = Size(size.width, size.height - boardH)
         )
     }
 }
 
+/* ----------------------------------------------------------------------------
+ * A standing book. The realism comes from the horizontal "rounded spine" sheen
+ * (a real spine is a cylinder catching light down its centre), the lit/shadowed
+ * vertical edges that separate neighbours, and varied head/tail banding.
+ * ------------------------------------------------------------------------- */
 @Composable
 private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
     val seed = abs(book.id.hashCode() xor book.title.hashCode())
-    val height = (118 + seed % 38).dp
-    val width = (22 + (seed / 13) % 12).dp
+    val height = (122 + seed % 32).dp
+    val width = (23 + (seed / 13) % 11).dp
     val style = SpinePalette[seed % SpinePalette.size]
+    val template = seed % 3
     val hasCover = !book.coverUrl.isNullOrBlank()
 
     Box(
         modifier = Modifier
             .width(width)
             .height(height)
-            .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
+            .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp, bottomStart = 1.dp, bottomEnd = 1.dp))
             .background(style.main)
             .clickable(onClick = onClick)
     ) {
@@ -324,49 +351,80 @@ private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .height(height * 0.55f)
+                    .height(height * 0.5f)
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f))
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.72f))
                         )
                     )
             )
         } else {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .height(10.dp)
-                    .background(style.accent.copy(alpha = 0.9f))
-            )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(14.dp)
-                    .background(style.accent.copy(alpha = 0.9f))
-            )
+            // Decorative head/tail treatment, varied per book
+            when (template) {
+                0 -> {
+                    SpineBand(Alignment.TopCenter, style.accent, 9.dp)
+                    SpineBand(Alignment.BottomCenter, style.accent, 13.dp)
+                }
+                1 -> {
+                    // A single accent block across the upper third
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .fillMaxWidth()
+                            .height(height * 0.3f)
+                            .background(style.accent.copy(alpha = 0.92f))
+                    )
+                }
+                else -> {
+                    SpineBand(Alignment.TopCenter, style.accent, 7.dp)
+                    // thin author/publisher rule near the foot
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 9.dp)
+                            .fillMaxWidth(0.55f)
+                            .height(1.5.dp)
+                            .background(style.accent.copy(alpha = 0.85f))
+                    )
+                }
+            }
         }
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .fillMaxHeight()
-                .width(1.5.dp)
-                .background(Color.White.copy(alpha = 0.18f))
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .fillMaxHeight()
-                .width(2.dp)
-                .background(Color.Black.copy(alpha = 0.22f))
-        )
-
+        // Rounded-spine sheen: dark edges, a soft highlight running down the centre.
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 14.dp, bottom = 18.dp),
+                .background(
+                    Brush.horizontalGradient(
+                        0.00f to Color.Black.copy(alpha = 0.22f),
+                        0.14f to Color.Transparent,
+                        0.50f to Color.White.copy(alpha = 0.10f),
+                        0.86f to Color.Transparent,
+                        1.00f to Color.Black.copy(alpha = 0.30f)
+                    )
+                )
+        )
+        // Crisp lit edge (left) and shadow gap (right) to separate from neighbours
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .fillMaxHeight()
+                .width(1.2.dp)
+                .background(Color.White.copy(alpha = 0.20f))
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .width(2.dp)
+                .background(Color.Black.copy(alpha = 0.26f))
+        )
+
+        // Title runs vertically up the spine, as on a real book
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 16.dp, bottom = 18.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -387,6 +445,21 @@ private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
     }
 }
 
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.SpineBand(
+    align: Alignment,
+    color: Color,
+    bandHeight: androidx.compose.ui.unit.Dp
+) {
+    Box(
+        modifier = Modifier
+            .align(align)
+            .fillMaxWidth()
+            .height(bandHeight)
+            .background(color.copy(alpha = 0.92f))
+    )
+}
+
 private fun Modifier.vertical() = this.layout { measurable, constraints ->
     val placeable = measurable.measure(
         Constraints(
@@ -404,75 +477,103 @@ private fun Modifier.vertical() = this.layout { measurable, constraints ->
     }
 }
 
+/* ----------------------------------------------------------------------------
+ * A horizontal pile of lying books. Each book is the standing spine transposed,
+ * given a visible cream page block and a tiny hand-stacked jitter, with a soft
+ * shadow under the pile so it sits on the board.
+ * ------------------------------------------------------------------------- */
 @Composable
 private fun HorizontalBookStack(
     books: List<SavedBook>,
     onBookClick: (Int) -> Unit
 ) {
-    // Each horizontal book = same spine dimensions, rotated 90°.
-    // Stack of 4 forms a vertical pile bottom-aligned with standing books.
     Column(
-        verticalArrangement = Arrangement.spacedBy(1.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        books.forEach { book ->
-            HorizontalBookSpine(book = book, onClick = { onBookClick(book.id) })
+        books.forEachIndexed { index, book ->
+            HorizontalBookSpine(
+                book = book,
+                indexInStack = index,
+                onClick = { onBookClick(book.id) }
+            )
         }
+        // Contact shadow pooled under the whole pile
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(Brush.verticalGradient(listOf(Color(0x30000000), Color.Transparent)))
+        )
     }
 }
 
 @Composable
-private fun HorizontalBookSpine(book: SavedBook, onClick: () -> Unit) {
+private fun HorizontalBookSpine(book: SavedBook, indexInStack: Int, onClick: () -> Unit) {
     val seed = abs(book.id.hashCode() xor book.title.hashCode())
-    // Dimensions are the standing spine, transposed — same data, rotated 90°
-    val width = (118 + seed % 38).dp
-    val height = (22 + (seed / 13) % 12).dp
+    // Same data as the standing spine, transposed 90°
+    val length = (108 + seed % 26).dp
+    val thickness = (24 + (seed / 13) % 11).dp
     val style = SpinePalette[seed % SpinePalette.size]
+    val jitter = ((seed % 7) - 3).dp   // -3..+3 dp, looks hand-stacked
 
     Box(
         modifier = Modifier
-            .width(width)
-            .height(height)
+            .offset(x = jitter)
+            .width(length)
+            .height(thickness)
             .clip(RoundedCornerShape(2.dp))
             .background(style.main)
             .clickable(onClick = onClick)
     ) {
-        // Spine bands now on left & right (since the book is "lying" rotated)
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .fillMaxHeight()
-                .width(14.dp)
-                .background(style.accent.copy(alpha = 0.9f))
-        )
+        // Cream page block on the right end (the open pages of a lying book)
         Box(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .fillMaxHeight()
-                .width(10.dp)
+                .width(7.dp)
+                .background(PageCream)
+        )
+        // Head/tail accent bands at the spine ends
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .fillMaxHeight()
+                .width(11.dp)
                 .background(style.accent.copy(alpha = 0.9f))
         )
-        // Light hits the top edge of the lying book
+        // Light along the top edge, shadow under the bottom
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(1.5.dp)
-                .background(Color.White.copy(alpha = 0.2f))
+                .height(1.4.dp)
+                .background(Color.White.copy(alpha = 0.22f))
         )
-        // Bottom shadow under the book
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .height(2.dp)
-                .background(Color.Black.copy(alpha = 0.22f))
+                .background(Color.Black.copy(alpha = 0.24f))
+        )
+        // Subtle cylindrical shading top-to-bottom
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        0.0f to Color.Black.copy(alpha = 0.10f),
+                        0.5f to Color.White.copy(alpha = 0.06f),
+                        1.0f to Color.Black.copy(alpha = 0.14f)
+                    )
+                )
         )
         // Title reads horizontally
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 20.dp, end = 14.dp),
+                .padding(start = 18.dp, end = 12.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -490,82 +591,214 @@ private fun HorizontalBookSpine(book: SavedBook, onClick: () -> Unit) {
     }
 }
 
+/* ----------------------------------------------------------------------------
+ * A potted palm, drawn with Canvas — layered fronds in three greens emerging
+ * from a cream pot, matching the leafy plant in the reference.
+ * ------------------------------------------------------------------------- */
 @Composable
-private fun PlantDecoration() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Bottom,
-        modifier = Modifier.height(150.dp)
+private fun PottedPlant() {
+    Box(
+        modifier = Modifier
+            .height(170.dp)
+            .width(96.dp),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        Icon(
-            imageVector = Icons.Outlined.LocalFlorist,
-            contentDescription = null,
-            tint = Color(0xFF6B8E4E),
-            modifier = Modifier.size(64.dp)
-        )
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val cx = w / 2f
 
-        Box(
-            modifier = Modifier
-                .size(width = 50.dp, height = 42.dp)
-                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 14.dp, bottomEnd = 14.dp))
-                .background(Color(0xFFE8DECF))
-        ) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .background(Color(0xFFD7CCC8))
+            val potTopY = h * 0.60f
+            val potBottomY = h * 0.97f
+            val topHalf = w * 0.34f
+            val botHalf = w * 0.24f
+            val soilY = potTopY + 3.dp.toPx()
+
+            // Soft shadow puddle under the pot
+            drawOval(
+                color = Color(0x22000000),
+                topLeft = Offset(cx - topHalf, potBottomY - 6.dp.toPx()),
+                size = Size(topHalf * 2f, 10.dp.toPx())
             )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .fillMaxHeight()
-                    .width(6.dp)
-                    .background(Color(0x18000000))
+
+            // Pot body (trapezoid, wider at the top)
+            val pot = Path().apply {
+                moveTo(cx - topHalf, potTopY)
+                lineTo(cx + topHalf, potTopY)
+                lineTo(cx + botHalf, potBottomY)
+                lineTo(cx - botHalf, potBottomY)
+                close()
+            }
+            drawPath(pot, color = Color(0xFFF1EADD))
+            // Shading on the right side of the pot for volume
+            val potShade = Path().apply {
+                moveTo(cx + topHalf * 0.35f, potTopY)
+                lineTo(cx + topHalf, potTopY)
+                lineTo(cx + botHalf, potBottomY)
+                lineTo(cx + botHalf * 0.4f, potBottomY)
+                close()
+            }
+            drawPath(potShade, color = Color(0x12000000))
+            // Rim and soil
+            drawRoundRect(
+                color = Color(0xFFE6DBC8),
+                topLeft = Offset(cx - topHalf, potTopY - 2.dp.toPx()),
+                size = Size(topHalf * 2f, 6.dp.toPx()),
+                cornerRadius = CornerRadius(2.dp.toPx(), 2.dp.toPx())
             )
+            drawOval(
+                color = Color(0xFF5C4A36),
+                topLeft = Offset(cx - topHalf + 3.dp.toPx(), soilY - 3.dp.toPx()),
+                size = Size((topHalf - 3.dp.toPx()) * 2f, 6.dp.toPx())
+            )
+
+            val base = Offset(cx, soilY)
+
+            // Back row — long, dark, wide fan
+            val backAngles = listOf(150f, 118f, 90f, 62f, 30f)
+            backAngles.forEachIndexed { i, a ->
+                drawLeaf(base, a, h * (0.50f + (i % 2) * 0.04f), w * 0.10f, Color(0xFF3F6B3A))
+            }
+            // Mid row
+            val midAngles = listOf(135f, 105f, 75f, 45f)
+            midAngles.forEachIndexed { i, a ->
+                drawLeaf(base, a, h * (0.44f + (i % 2) * 0.04f), w * 0.095f, Color(0xFF55883F))
+            }
+            // Front row — shorter, lighter, more upright
+            val frontAngles = listOf(115f, 90f, 65f)
+            frontAngles.forEach { a ->
+                drawLeaf(base, a, h * 0.38f, w * 0.085f, Color(0xFF73A84D))
+            }
         }
     }
 }
 
+/** Draws a single pointed leaf from [base] at [angleDeg] (0°=right, 90°=up). */
+private fun DrawScope.drawLeaf(
+    base: Offset,
+    angleDeg: Float,
+    length: Float,
+    halfWidth: Float,
+    color: Color
+) {
+    val t = (angleDeg * PI / 180.0).toFloat()
+    val dirX = cos(t)
+    val dirY = -sin(t)               // screen y points down, so negate for "up"
+    val tip = Offset(base.x + dirX * length, base.y + dirY * length)
+    val perpX = -dirY
+    val perpY = dirX
+    val midX = base.x + dirX * length * 0.45f
+    val midY = base.y + dirY * length * 0.45f
+
+    val leaf = Path().apply {
+        moveTo(base.x, base.y)
+        quadraticBezierTo(midX + perpX * halfWidth, midY + perpY * halfWidth, tip.x, tip.y)
+        quadraticBezierTo(midX - perpX * halfWidth, midY - perpY * halfWidth, base.x, base.y)
+        close()
+    }
+    drawPath(leaf, color = color)
+    // Centre vein for a little definition
+    drawLine(
+        color = Color.Black.copy(alpha = 0.10f),
+        start = base,
+        end = tip,
+        strokeWidth = 1f
+    )
+}
+
+/* ----------------------------------------------------------------------------
+ * A white marble bookend — a right-triangle block that caps a run of standing
+ * books, like the one on the reference's middle shelf.
+ * ------------------------------------------------------------------------- */
+@Composable
+private fun MarbleBookend() {
+    Canvas(
+        modifier = Modifier
+            .height(112.dp)
+            .width(40.dp)
+    ) {
+        val w = size.width
+        val h = size.height
+
+        // Cast shadow to the right
+        val shadow = Path().apply {
+            moveTo(4.dp.toPx(), h * 0.22f)
+            lineTo(w, h)
+            lineTo(4.dp.toPx(), h)
+            close()
+        }
+        drawPath(shadow, color = Color(0x1A000000))
+
+        // Marble triangle: tall vertical edge on the left, sloping to the right
+        val block = Path().apply {
+            moveTo(0f, h * 0.18f)
+            lineTo(0f, h)
+            lineTo(w, h)
+            close()
+        }
+        drawPath(block, color = Color(0xFFF6F3EE))
+        // Subtle top-lit face
+        drawPath(
+            block,
+            brush = Brush.verticalGradient(
+                listOf(Color.White.copy(alpha = 0.35f), Color.Transparent)
+            )
+        )
+        // Faint grey veining
+        drawLine(
+            color = Color(0x22746A60),
+            start = Offset(0f, h * 0.55f),
+            end = Offset(w * 0.7f, h * 0.95f),
+            strokeWidth = 1.2f
+        )
+        drawLine(
+            color = Color(0x18746A60),
+            start = Offset(0f, h * 0.72f),
+            end = Offset(w * 0.45f, h),
+            strokeWidth = 1f
+        )
+    }
+}
+
+/* ----------------------------------------------------------------------------
+ * A framed piece of wall art: layered wood frame, cream matting, soft glass
+ * shine. Kept from the original layout, rebuilt to read as a real frame.
+ * ------------------------------------------------------------------------- */
 @Composable
 private fun EmptyPictureFrame() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom,
-        modifier = Modifier.height(110.dp)
+        modifier = Modifier.height(112.dp)
     ) {
-        Box(
-            modifier = Modifier.size(width = 70.dp, height = 88.dp)
-        ) {
-            // Layered wood frame: dark edge → wood body → cream matting (empty)
+        Box(modifier = Modifier.size(width = 72.dp, height = 92.dp)) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(Color(0xFF4E342E))
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(Color(0xFF4E342E))   // dark outer edge
                     .padding(2.dp)
-                    .background(Color(0xFF8D6E63))
-                    .padding(5.dp)
-                    .background(Color(0xFFF5F0E8))
+                    .background(Color(0xFF8D6E63))   // wood body
+                    .padding(6.dp)
+                    .background(Color(0xFFF7F2EA))   // cream matting
             )
-            // Glass shine
+            // Glass shine streak
             Box(
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 9.dp)
-                    .fillMaxWidth(0.6f)
+                    .align(Alignment.TopStart)
+                    .padding(start = 14.dp, top = 12.dp)
+                    .fillMaxWidth(0.45f)
                     .height(1.5.dp)
-                    .background(Color.White.copy(alpha = 0.45f))
+                    .background(Color.White.copy(alpha = 0.55f))
             )
-            // Inner top shadow for frame depth
+            // Inner shadow for depth under the frame lip
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(horizontal = 8.dp, vertical = 7.dp)
+                    .padding(horizontal = 9.dp, vertical = 9.dp)
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color.Black.copy(alpha = 0.18f))
+                    .background(Color.Black.copy(alpha = 0.16f))
             )
         }
     }
