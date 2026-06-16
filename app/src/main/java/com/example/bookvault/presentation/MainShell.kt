@@ -189,7 +189,7 @@ private fun BookVaultNavBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(30.dp)),
-            color = MaterialTheme.colorScheme.surface,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 0.dp,
             shadowElevation = 6.dp
         ) {
