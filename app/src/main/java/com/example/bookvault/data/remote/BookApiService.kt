@@ -10,14 +10,9 @@ class BookApiService(private val client: HttpClient) {
 
     suspend fun getAllBooks(query: String? = null, limit: Int = 40): List<BookDto> {
         val response: OpenLibrarySearchResponse = client.get("$baseUrl/search.json") {
-            // No query → wildcard sorted by edition count returns the most
-            // popular / widely-published books, which reliably have cover_i set.
-            if (query.isNullOrBlank()) {
-                parameter("q", "*")
-                parameter("sort", "editions")
-            } else {
-                parameter("q", query)
-            }
+            // "bestseller" is a real text-search term that returns within ~1s.
+            // Wildcard + sort=editions hangs OL's backend — never use that.
+            parameter("q", query?.takeIf { it.isNotBlank() } ?: "bestseller")
             parameter("limit", limit)
             parameter(
                 "fields",
