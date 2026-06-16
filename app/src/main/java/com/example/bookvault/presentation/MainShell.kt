@@ -104,29 +104,17 @@ fun MainShell(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = {
-            BookVaultNavBar(
-                items = navItems,
-                currentRoute = currentDestination?.route,
-                onItemSelected = { route ->
-                    navController.navigate(route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background
+            // bottomBar removed — pill is now a floating overlay below, so content
+            // flows freely behind it and only the pill shape itself blocks the view.
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
             // Swap content based on selected tab
             when (currentDestination?.route) {
                 Screen.Discover.route -> {
@@ -165,16 +153,34 @@ fun MainShell(
             }
         }
     }
+
+        // Floating pill — overlays content, content scrolls freely behind it.
+        BookVaultNavBar(
+            items = navItems,
+            currentRoute = currentDestination?.route,
+            onItemSelected = { route ->
+                navController.navigate(route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
 }
 
 @Composable
 private fun BookVaultNavBar(
     items: List<BottomNavItem>,
     currentRoute: String?,
-    onItemSelected: (String) -> Unit
+    onItemSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
             .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -184,8 +190,8 @@ private fun BookVaultNavBar(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(30.dp)),
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 2.dp,
-            shadowElevation = 10.dp
+            tonalElevation = 0.dp,
+            shadowElevation = 6.dp
         ) {
             Row(
                 modifier = Modifier
