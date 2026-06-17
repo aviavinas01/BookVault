@@ -75,6 +75,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.bookvault.R
 import com.example.bookvault.domain.model.Book
 import com.example.bookvault.domain.model.SavedBook
@@ -474,6 +475,8 @@ private fun FeaturedBookCard(
         val palette = palettes[(book.title.hashCode() and 0x7FFFFFFF) % palettes.size]
         Brush.linearGradient(colors = palette)
     }
+    val hasCover = !book.coverUrl.isNullOrBlank()
+
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().height(220.dp),
@@ -481,24 +484,42 @@ private fun FeaturedBookCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
+            // Gradient fallback — always drawn so it shows during Coil's load
+            // window or if the URL fails. AsyncImage then paints on top.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(bgGradient)
             )
+            if (hasCover) {
+                AsyncImage(
+                    model = book.coverUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            // Top-down readability gradient: light top so the badge stays
+            // visible, transparent middle, deep bottom so the title pops.
             Box(
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 20.dp)
-            ) {
-                BookCoverPlaceholder(title = book.title, size = 130.dp, cornerRadius = 14.dp, coverUrl = book.coverUrl)
-            }
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colorStops = arrayOf(
+                                0.0f to Color.Black.copy(alpha = 0.30f),
+                                0.35f to Color.Transparent,
+                                1.0f to Color.Black.copy(alpha = 0.78f)
+                            )
+                        )
+                    )
+            )
             Box(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(14.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White.copy(alpha = 0.2f))
+                    .background(Color.White.copy(alpha = 0.22f))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Text(
@@ -511,20 +532,20 @@ private fun FeaturedBookCard(
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(16.dp)
-                    .fillMaxWidth(0.62f),
+                    .padding(18.dp)
+                    .fillMaxWidth(0.88f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 if (book.pageCount > 0) {
                     Text(
                         text = "${book.pageCount} pages",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = Color.White.copy(alpha = 0.85f)
                     )
                 }
                 Text(
                     text = book.title.ifBlank { "Untitled" },
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     maxLines = 2,
