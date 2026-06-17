@@ -53,7 +53,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.bookvault.R
 import com.example.bookvault.domain.model.SavedBook
-import com.example.bookvault.presentation.ui.theme.PlayfairDisplay
+import com.example.bookvault.presentation.ui.theme.CormorantGaramond
 import com.example.bookvault.presentation.viewmodel.BookViewModel
 import kotlin.math.PI
 import kotlin.math.abs
@@ -148,7 +148,7 @@ private fun ShelfHeader(onAddClick: () -> Unit) {
     ) {
         Text(
             text = "My Bookshelf",
-            fontFamily = PlayfairDisplay,
+            fontFamily = CormorantGaramond,
             fontWeight = FontWeight.Bold,
             fontSize = 26.sp,
             color = InkBlack
@@ -423,7 +423,7 @@ private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                fontFamily = PlayfairDisplay,
+                fontFamily = CormorantGaramond,
                 letterSpacing = 1.sp
             )
         }
@@ -574,7 +574,7 @@ private fun HorizontalBookSpine(book: SavedBook, indexInStack: Int, onClick: () 
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                fontFamily = PlayfairDisplay,
+                fontFamily = CormorantGaramond,
                 letterSpacing = 1.sp
             )
         }
