@@ -23,14 +23,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -84,8 +84,8 @@ fun MainShell(
         BottomNavItem(
             label = "Discover",
             route = Screen.Discover.route,
-            icon = Icons.Outlined.Explore,
-            selectedIcon = Icons.Filled.Explore
+            icon = Icons.Outlined.Search,
+            selectedIcon = Icons.Filled.Search
         ),
         BottomNavItem(
             label = "Shelf",

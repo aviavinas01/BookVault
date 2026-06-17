@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -108,7 +107,6 @@ private const val BooksPerShelf = 4
 fun ShelfScreen(
     viewModel: BookViewModel,
     onBookClick: (Int) -> Unit,
-    onSearchClick: () -> Unit = {},
     onAddClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -120,7 +118,7 @@ fun ShelfScreen(
             .fillMaxSize()
             .background(ShelfBg)
     ) {
-        ShelfHeader(onSearchClick = onSearchClick, onAddClick = onAddClick)
+        ShelfHeader(onAddClick = onAddClick)
 
         Column(
             modifier = Modifier
@@ -141,7 +139,7 @@ fun ShelfScreen(
 }
 
 @Composable
-private fun ShelfHeader(onSearchClick: () -> Unit, onAddClick: () -> Unit) {
+private fun ShelfHeader(onAddClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -156,9 +154,6 @@ private fun ShelfHeader(onSearchClick: () -> Unit, onAddClick: () -> Unit) {
             color = InkBlack
         )
         Spacer(Modifier.weight(1f))
-        IconButton(onClick = onSearchClick) {
-            Icon(Icons.Rounded.Search, contentDescription = "Search", tint = InkBlack)
-        }
         IconButton(onClick = onAddClick) {
             Icon(Icons.Rounded.Add, contentDescription = "Add book", tint = InkBlack)
         }
@@ -602,6 +597,11 @@ private fun PottedPlant() {
         modifier = Modifier
             .height(195.dp)
             .width(130.dp)
+            // Push the image down so the visible vase bottom (not the PNG's
+            // transparent bottom margin) lands on the shelf surface. The
+            // overflow drops into the wood-board area where the transparent
+            // PNG just lets the board show through — looks correctly grounded.
+            .offset(y = 12.dp)
     )
 }
 
