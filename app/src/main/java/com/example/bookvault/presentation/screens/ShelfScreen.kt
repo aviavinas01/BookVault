@@ -585,6 +585,7 @@ private fun HorizontalBookSpine(book: SavedBook, indexInStack: Int, onClick: () 
  * Imported vase + flower image. Transparent PNG drops in cleanly over the
  * shelf because ContentScale.Fit preserves aspect inside the 96×170 box.
  * ------------------------------------------------------------------------- */
+
 @Composable
 private fun PottedPlant() {
     Image(
@@ -609,6 +610,7 @@ private fun PottedPlant() {
  * A white marble bookend — a right-triangle block that caps a run of standing
  * books, like the one on the reference's middle shelf.
  * ------------------------------------------------------------------------- */
+
 @Composable
 private fun MarbleBookend() {
     Canvas(
@@ -619,21 +621,23 @@ private fun MarbleBookend() {
         val w = size.width
         val h = size.height
 
-        // Cast shadow to the right
+        // Cast shadow behind the bookend (now to the left, since the flat
+        // face is on the right and the slope falls away to the left).
         val shadow = Path().apply {
-            moveTo(4.dp.toPx(), h * 0.22f)
-            lineTo(w, h)
-            lineTo(4.dp.toPx(), h)
+            moveTo(w - 4.dp.toPx(), h * 0.22f)
+            lineTo(0f, h)
+            lineTo(w - 4.dp.toPx(), h)
             close()
         }
         drawPath(shadow, color = Color(0x1A000000))
 
-        // Marble triangle: tall vertical edge on the left, sloping to the right
+        // Marble triangle: tall vertical edge on the RIGHT (presses against the
+        // books beside it), sloping down to the bottom-left.
         val block = Path().apply {
-            moveTo(0f, h * 0.18f)
-            lineTo(0f, h)
-            lineTo(w, h)
-            close()
+            moveTo(w, h * 0.18f)    // top-right — top of vertical face
+            lineTo(w, h)            // bottom-right — bottom of vertical face
+            lineTo(0f, h)           // bottom-left — far end of the slope
+            close()                 // back up the hypotenuse to top-right
         }
         drawPath(block, color = Color(0xFFF6F3EE))
         // Subtle top-lit face
@@ -643,17 +647,17 @@ private fun MarbleBookend() {
                 listOf(Color.White.copy(alpha = 0.35f), Color.Transparent)
             )
         )
-        // Faint grey veining
+        // Faint grey veining — mirrored along with the block
         drawLine(
             color = Color(0x22746A60),
-            start = Offset(0f, h * 0.55f),
-            end = Offset(w * 0.7f, h * 0.95f),
+            start = Offset(w, h * 0.55f),
+            end = Offset(w * 0.3f, h * 0.95f),
             strokeWidth = 1.2f
         )
         drawLine(
             color = Color(0x18746A60),
-            start = Offset(0f, h * 0.72f),
-            end = Offset(w * 0.45f, h),
+            start = Offset(w, h * 0.72f),
+            end = Offset(w * 0.55f, h),
             strokeWidth = 1f
         )
     }
@@ -663,6 +667,7 @@ private fun MarbleBookend() {
  * A framed piece of wall art: layered wood frame, cream matting, soft glass
  * shine. Kept from the original layout, rebuilt to read as a real frame.
  * ------------------------------------------------------------------------- */
+
 @Composable
 private fun EmptyPictureFrame() {
     Column(
