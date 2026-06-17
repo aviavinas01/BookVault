@@ -473,6 +473,7 @@ private fun Modifier.vertical() = this.layout { measurable, constraints ->
  * shadow under the pile so it sits on the board.
  * ------------------------------------------------------------------------- */
 @Composable
+
 private fun HorizontalBookStack(
     books: List<SavedBook>,
     onBookClick: (Int) -> Unit
@@ -595,9 +596,12 @@ private fun PottedPlant() {
         painter = painterResource(R.drawable.plant_vase),
         contentDescription = null,
         contentScale = ContentScale.Fit,
+        // BottomCenter anchors the vase to the shelf surface so it never appears
+        // to float when the PNG's aspect is shorter than the bounding box.
+        alignment = Alignment.BottomCenter,
         modifier = Modifier
-            .height(170.dp)
-            .width(96.dp)
+            .height(195.dp)
+            .width(130.dp)
     )
 }
 
