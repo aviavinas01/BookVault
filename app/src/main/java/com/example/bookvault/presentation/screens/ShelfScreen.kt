@@ -1,6 +1,7 @@
 package com.example.bookvault.presentation.screens
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,6 +44,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,6 +52,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.bookvault.R
 import com.example.bookvault.domain.model.SavedBook
 import com.example.bookvault.presentation.ui.theme.PlayfairDisplay
 import com.example.bookvault.presentation.viewmodel.BookViewModel
@@ -96,7 +100,9 @@ private val PageCream = Color(0xFFF3EAD8)         // visible page block on lying
 private val InkBlack = Color(0xFF2C2C2C)
 
 private const val MinShelves = 4
-private const val BooksPerShelf = 9
+// 4 books per shelf — each shelf is a single arrangement type.
+// Cycle of 3: vertical shelf (4 standing) → horizontal shelf (4 lying) → vertical shelf (4 standing).
+private const val BooksPerShelf = 4
 
 @Composable
 fun ShelfScreen(
@@ -165,36 +171,24 @@ private fun ShelfRow(
     rowIndex: Int,
     onBookClick: (Int) -> Unit
 ) {
-    val standingBooks = books.take(5)
-    val horizontalBooks = books.drop(5).take(4)
-
     Column(modifier = Modifier.fillMaxWidth()) {
         ShelfAlcove {
-            // Decoration pattern repeats every 3 shelves. Book ORDER is preserved
-            // exactly as defined here; only the visuals around them changed.
-            // 0 -> empty-left, stack, bookend, standing-right
-            // 1 -> standing-left, stack, plant-right
-            // 2 -> frame-left, stack, standing-right
+            // 3-shelf cycle, one arrangement per shelf, books in saved order.
+            // 0 -> 4 standing books on right, marble bookend on left
+            // 1 -> 4 lying books on left, potted plant on right
+            // 2 -> 4 standing books on right, picture frame on left
             when (rowIndex % 3) {
                 0 -> {
                     Spacer(Modifier.weight(1f))
-                    if (horizontalBooks.isNotEmpty()) {
-                        HorizontalBookStack(books = horizontalBooks, onBookClick = onBookClick)
-                        Spacer(Modifier.width(6.dp))
-                    }
                     MarbleBookend()
                     Spacer(Modifier.width(2.dp))
-                    standingBooks.forEach { book ->
+                    books.forEach { book ->
                         ShelfBookSpine(book = book, onClick = { onBookClick(book.id) })
                     }
                 }
                 1 -> {
-                    standingBooks.forEach { book ->
-                        ShelfBookSpine(book = book, onClick = { onBookClick(book.id) })
-                    }
-                    if (horizontalBooks.isNotEmpty()) {
-                        Spacer(Modifier.width(6.dp))
-                        HorizontalBookStack(books = horizontalBooks, onBookClick = onBookClick)
+                    if (books.isNotEmpty()) {
+                        HorizontalBookStack(books = books, onBookClick = onBookClick)
                     }
                     Spacer(Modifier.weight(1f))
                     PottedPlant()
@@ -202,11 +196,7 @@ private fun ShelfRow(
                 else -> {
                     EmptyPictureFrame()
                     Spacer(Modifier.weight(1f))
-                    if (horizontalBooks.isNotEmpty()) {
-                        HorizontalBookStack(books = horizontalBooks, onBookClick = onBookClick)
-                        Spacer(Modifier.width(6.dp))
-                    }
-                    standingBooks.forEach { book ->
+                    books.forEach { book ->
                         ShelfBookSpine(book = book, onClick = { onBookClick(book.id) })
                     }
                 }
@@ -327,7 +317,7 @@ private fun ShelfBoard(modifier: Modifier = Modifier) {
 private fun ShelfBookSpine(book: SavedBook, onClick: () -> Unit) {
     val seed = abs(book.id.hashCode() xor book.title.hashCode())
     val height = (122 + seed % 32).dp
-    val width = (23 + (seed / 13) % 11).dp
+    val width = (28 + (seed / 13) % 14).dp  // 28-41 dp — back to full-size spine widths
     val style = SpinePalette[seed % SpinePalette.size]
     val template = seed % 3
     val hasCover = !book.coverUrl.isNullOrBlank()
@@ -487,7 +477,11 @@ private fun HorizontalBookStack(
     books: List<SavedBook>,
     onBookClick: (Int) -> Unit
 ) {
+    // IntrinsicSize.Max bounds the column to the widest book — without this, the
+    // fillMaxWidth contact-shadow below would propagate up and eat the whole Row,
+    // pushing the plant out to 0 dp width.
     Column(
+        modifier = Modifier.width(IntrinsicSize.Max),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -592,117 +586,18 @@ private fun HorizontalBookSpine(book: SavedBook, indexInStack: Int, onClick: () 
 }
 
 /* ----------------------------------------------------------------------------
- * A potted palm, drawn with Canvas — layered fronds in three greens emerging
- * from a cream pot, matching the leafy plant in the reference.
+ * Imported vase + flower image. Transparent PNG drops in cleanly over the
+ * shelf because ContentScale.Fit preserves aspect inside the 96×170 box.
  * ------------------------------------------------------------------------- */
 @Composable
 private fun PottedPlant() {
-    Box(
+    Image(
+        painter = painterResource(R.drawable.plant_vase),
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
         modifier = Modifier
             .height(170.dp)
-            .width(96.dp),
-        contentAlignment = Alignment.BottomCenter
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val w = size.width
-            val h = size.height
-            val cx = w / 2f
-
-            val potTopY = h * 0.60f
-            val potBottomY = h * 0.97f
-            val topHalf = w * 0.34f
-            val botHalf = w * 0.24f
-            val soilY = potTopY + 3.dp.toPx()
-
-            // Soft shadow puddle under the pot
-            drawOval(
-                color = Color(0x22000000),
-                topLeft = Offset(cx - topHalf, potBottomY - 6.dp.toPx()),
-                size = Size(topHalf * 2f, 10.dp.toPx())
-            )
-
-            // Pot body (trapezoid, wider at the top)
-            val pot = Path().apply {
-                moveTo(cx - topHalf, potTopY)
-                lineTo(cx + topHalf, potTopY)
-                lineTo(cx + botHalf, potBottomY)
-                lineTo(cx - botHalf, potBottomY)
-                close()
-            }
-            drawPath(pot, color = Color(0xFFF1EADD))
-            // Shading on the right side of the pot for volume
-            val potShade = Path().apply {
-                moveTo(cx + topHalf * 0.35f, potTopY)
-                lineTo(cx + topHalf, potTopY)
-                lineTo(cx + botHalf, potBottomY)
-                lineTo(cx + botHalf * 0.4f, potBottomY)
-                close()
-            }
-            drawPath(potShade, color = Color(0x12000000))
-            // Rim and soil
-            drawRoundRect(
-                color = Color(0xFFE6DBC8),
-                topLeft = Offset(cx - topHalf, potTopY - 2.dp.toPx()),
-                size = Size(topHalf * 2f, 6.dp.toPx()),
-                cornerRadius = CornerRadius(2.dp.toPx(), 2.dp.toPx())
-            )
-            drawOval(
-                color = Color(0xFF5C4A36),
-                topLeft = Offset(cx - topHalf + 3.dp.toPx(), soilY - 3.dp.toPx()),
-                size = Size((topHalf - 3.dp.toPx()) * 2f, 6.dp.toPx())
-            )
-
-            val base = Offset(cx, soilY)
-
-            // Back row — long, dark, wide fan
-            val backAngles = listOf(150f, 118f, 90f, 62f, 30f)
-            backAngles.forEachIndexed { i, a ->
-                drawLeaf(base, a, h * (0.50f + (i % 2) * 0.04f), w * 0.10f, Color(0xFF3F6B3A))
-            }
-            // Mid row
-            val midAngles = listOf(135f, 105f, 75f, 45f)
-            midAngles.forEachIndexed { i, a ->
-                drawLeaf(base, a, h * (0.44f + (i % 2) * 0.04f), w * 0.095f, Color(0xFF55883F))
-            }
-            // Front row — shorter, lighter, more upright
-            val frontAngles = listOf(115f, 90f, 65f)
-            frontAngles.forEach { a ->
-                drawLeaf(base, a, h * 0.38f, w * 0.085f, Color(0xFF73A84D))
-            }
-        }
-    }
-}
-
-/** Draws a single pointed leaf from [base] at [angleDeg] (0°=right, 90°=up). */
-private fun DrawScope.drawLeaf(
-    base: Offset,
-    angleDeg: Float,
-    length: Float,
-    halfWidth: Float,
-    color: Color
-) {
-    val t = (angleDeg * PI / 180.0).toFloat()
-    val dirX = cos(t)
-    val dirY = -sin(t)               // screen y points down, so negate for "up"
-    val tip = Offset(base.x + dirX * length, base.y + dirY * length)
-    val perpX = -dirY
-    val perpY = dirX
-    val midX = base.x + dirX * length * 0.45f
-    val midY = base.y + dirY * length * 0.45f
-
-    val leaf = Path().apply {
-        moveTo(base.x, base.y)
-        quadraticBezierTo(midX + perpX * halfWidth, midY + perpY * halfWidth, tip.x, tip.y)
-        quadraticBezierTo(midX - perpX * halfWidth, midY - perpY * halfWidth, base.x, base.y)
-        close()
-    }
-    drawPath(leaf, color = color)
-    // Centre vein for a little definition
-    drawLine(
-        color = Color.Black.copy(alpha = 0.10f),
-        start = base,
-        end = tip,
-        strokeWidth = 1f
+            .width(96.dp)
     )
 }
 
